@@ -8,11 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { CalendarIcon } from 'lucide-react'
-import { format } from 'date-fns'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import axios from 'axios'
+import { toast } from '@/hooks/use-toast'
+import InputMask from 'react-input-mask';
 
 const baseSchema = z.object({
   data: z.date({
@@ -90,9 +88,9 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
 
   const fetchData = async () => {
     try {
-      const expensesFuncionario = await axios.get('http://0.0.0.0:8000/employees');
-      const expensesAeronaves = await axios.get('http://0.0.0.0:8000/aircraft');
-      const expensesServicos = await axios.get('http://0.0.0.0:8000/services');
+      const expensesFuncionario = await axios.get('/api/employees');
+      const expensesAeronaves = await axios.get('/api/aircraft');
+      const expensesServicos = await axios.get('/api/services');
 
       setExpenses(prevExpenses => ({
         ...prevExpenses,
@@ -112,14 +110,21 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
 
   const onSubmit = async (data: ExpenseFormData) => {
     try {
-      const resp = await axios.post('http://0.0.0.0:8000/employees', data)
-
+      const resp = await axios.post('/api/expenses', data)
+      toast({
+        title: "Despesa cadastrada",
+        description: `A despesa foi cadastrada com sucesso!`,
+      })
     } catch (error) {
       console.log(error);
-
+      toast({
+        title: "Erro",
+        description: `A despesa não foi cadastrada!`,
+        variant: 'destructive'
+      })
     }
-    console.log(data)
   }
+
 
   return (
     <div className="p-6 bg-[#4B5320] rounded-lg shadow text-white">
@@ -132,24 +137,9 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
               name="data"
               control={control}
               render={({ field }) => (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={`w-full justify-start text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value ? format(field.value, "PPP") : <span>Selecione uma data</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <InputMask mask="99/99" className='text-white' placeholder="MM/DD" {...field}>
+                  {(inputProps) => <Input {...inputProps} />}
+                </InputMask>
               )}
             />
             {errors.data && <p className="text-red-500 text-sm">{errors.data.message}</p>}
@@ -191,7 +181,7 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
                     </SelectTrigger>
                     <SelectContent>
                       {expenses.funcionario.map((item => (
-                        <SelectItem value={item.id}>{item.name} - {item.role}</SelectItem>
+                        <SelectItem value={item.id.toString()}>{item.name} - {item.role}</SelectItem>
                       )))}
                     </SelectContent>
                   </Select>
@@ -222,7 +212,7 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
                     </SelectTrigger>
                     <SelectContent>
                       {expenses.servicos.map((item => (
-                        <SelectItem value={item.id}>
+                        <SelectItem value={item.id.toString()}>
                           {`${item.id} |
                           ${item.nome_da_area} |
                           ${item.solicitante_da_area} de
@@ -239,7 +229,7 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
           </>
         )}
 
-        {(selectedOrigin === 'Despesa do Avião' || selectedOrigin === 'Despesa do Veículo' || selectedOrigin === 'Despesa Específica') && (
+        {(selectedOrigin === 'Despesa do Avião' || selectedOrigin === 'Despesa do Veículo' || selectedOrigin === 'Despesa Específica') && expenses.aeronaves && (
           <>
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo</Label>

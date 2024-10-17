@@ -13,7 +13,6 @@ import { toast } from '@/hooks/use-toast'
 
 const employeeSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  position: z.string().min(2, 'Cargo deve ter pelo menos 2 caracteres'),
   employeeType: z.enum(['Piloto', 'Mecânico', 'Administrativo', 'Outro']),
 })
 
@@ -24,18 +23,17 @@ export function RegisterEmployee() {
     resolver: zodResolver(employeeSchema),
     defaultValues: {
       name: '',
-      position: '',
       employeeType: 'Outro',
     },
   })
 
   const onSubmit = async (data: EmployeeFormValues) => {
     try {
-      const response = await axios.post('http://0.0.0.0:8000/employees', data)
+      const response = await axios.post('/api/employees', { name: data.name, role: data.employeeType })
       console.log('Employee created:', response.data)
       toast({
         title: "Funcionário cadastrado com sucesso!",
-        description: `${data.name} foi adicionado como ${data.position}.`,
+        description: `${data.name} foi adicionado como ${data.employeeType}.`,
       })
       form.reset()
     } catch (error) {
@@ -66,19 +64,7 @@ export function RegisterEmployee() {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="position"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cargo</FormLabel>
-                <FormControl>
-                  <Input placeholder="Cargo" {...field} className="bg-[#556B2F] text-white border-[#8FBC8F]" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+         
           <FormField
             control={form.control}
             name="employeeType"

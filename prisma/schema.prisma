@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model aircraft {
+  id           Int        @id @default(autoincrement())
+  registration String?    @unique(map: "ix_aircraft_registration") @db.VarChar(50)
+  brand        String?    @db.VarChar(50)
+  model        String?    @db.VarChar(50)
+  expenses     expenses[]
+  services     services[]
+
+  @@index([brand], map: "ix_aircraft_brand")
+  @@index([id], map: "ix_aircraft_id")
+  @@index([model], map: "ix_aircraft_model")
+}
+
+model employees {
+  id       Int        @id @default(autoincrement())
+  name     String?    @unique(map: "ix_employees_name") @db.VarChar(50)
+  role     String?    @db.VarChar(50)
+  expenses expenses[]
+  services services[]
+
+  @@index([id], map: "ix_employees_id")
+  @@index([role], map: "ix_employees_role")
+}
+
+model expenses {
+  id                       Int        @id @default(autoincrement())
+  data                     DateTime?  @db.DateTime(0)
+  origem                   String?    @db.VarChar(128)
+  tipo                     String?    @db.VarChar(128)
+  descricao                String?    @db.VarChar(128)
+  porcentagem              Decimal?   @db.Decimal(10, 2)
+  valor                    Decimal?   @db.Decimal(10, 2)
+  confirma__o_de_pagamento String?    @map("confirmação_de_pagamento") @db.VarChar(128)
+  service_id               Int?
+  employee_id              Int?
+  aircraft_id              Int?
+  services                 services?  @relation(fields: [service_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "expenses_ibfk_1")
+  employees                employees? @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "expenses_ibfk_2")
+  aircraft                 aircraft?  @relation(fields: [aircraft_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "expenses_ibfk_3")
+
+  @@index([aircraft_id], map: "aircraft_id")
+  @@index([employee_id], map: "employee_id")
+  @@index([id], map: "ix_expenses_id")
+  @@index([service_id], map: "service_id")
+}
+
+model services {
+  id                                   Int        @id @default(autoincrement())
+  data_inicio                          DateTime?  @db.DateTime(0)
+  data_final                           DateTime?  @db.DateTime(0)
+  solicitante_da_area                  String?    @db.VarChar(128)
+  nome_da_area                         String?    @db.VarChar(128)
+  tamanho_area_hectares                Float?     @db.Float
+  tipo_aplicacao_na_area               String?    @db.VarChar(128)
+  quantidade_no_hopper_por_voo         String?    @db.VarChar(128)
+  tipo_de_vazao                        Float?     @db.Float
+  quantidade_de_voos_na_area           Int?
+  valor_total_da_area                  Decimal?   @db.Decimal(10, 2)
+  confirmacao_de_pagamento_da_area     String?    @db.VarChar(128)
+  tempo_de_voo_gasto_na_area           Float?     @db.Float
+  aeronave_id                          Int?
+  employee_id                          Int?
+  criado_por                           Int?
+  criado_em                            DateTime?  @db.DateTime(0)
+  tamanho_area_alqueires               Float?     @db.Float
+  valor_por_hectare                    Decimal?   @db.Decimal(10, 2)
+  valor_por_alqueire                   Decimal?   @db.Decimal(10, 2)
+  valor_medio_por_hora_de_voo          Decimal?   @db.Decimal(10, 2)
+  lucro_por_area                       Decimal?   @db.Decimal(10, 2)
+  percentual_de_lucro_liquido_por_area Float?     @db.Float
+  expenses                             expenses[]
+  aircraft                             aircraft?  @relation(fields: [aeronave_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "services_ibfk_1")
+  employees                            employees? @relation(fields: [employee_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "services_ibfk_2")
+  users                                users?     @relation(fields: [criado_por], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "services_ibfk_3")
+
+  @@index([aeronave_id], map: "aeronave_id")
+  @@index([criado_por], map: "criado_por")
+  @@index([employee_id], map: "employee_id")
+  @@index([id], map: "ix_services_id")
+}
+
+model users {
+  id            Int        @id @default(autoincrement())
+  username      String?    @unique(map: "ix_users_username") @db.VarChar(50)
+  name          String?    @db.VarChar(50)
+  password_hash String?    @db.Text
+  role          String?    @db.VarChar(50)
+  is_active     Boolean?
+  services      services[]
+
+  @@index([id], map: "ix_users_id")
+  @@index([name], map: "ix_users_name")
+  @@index([role], map: "ix_users_role")
+}

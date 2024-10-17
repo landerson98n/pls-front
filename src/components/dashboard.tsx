@@ -42,17 +42,17 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
   }, [selectedAircraftId, selectedEmployee, startDate, endDate])
 
   const fetchDataSpecific = async () => {
-    const startDateStr = format(startDate, 'dd_MM_yyyy');
-    const endDateStr = format(endDate, 'dd_MM_yyyy');
+    const startDateStr = startDate && format(startDate, 'dd_MM_yyyy');
+    const endDateStr = startDate && format(endDate, 'dd_MM_yyyy');
 
     if (selectedAircraftId) {
-      const aircraftReportRes = await axios.get(`http://0.0.0.0:8000/gerar_relatorio_da_aeronave/${startDateStr}/${endDateStr}/${selectedAircraftId}/`)
+      const aircraftReportRes = await axios.get(`/api/gerar_relatorio_da_aeronave/${startDateStr}/${endDateStr}/${selectedAircraftId}/`)
       setAircraftReport(aircraftReportRes.data)
 
     }
 
     if (selectedEmployee && selectedAircraftId) {
-      const expensesRes = await axios.get(`http://0.0.0.0:8000/despesas_por_categoria_especifica/${startDateStr}/${endDateStr}/${selectedEmployee}/${selectedAircraftId}/`)
+      const expensesRes = await axios.get(`/api/despesas_por_categoria_especifica/${startDateStr}/${endDateStr}/${selectedEmployee}/${selectedAircraftId}/`)
       setExpensesData(expensesRes.data)
     }
   }
@@ -64,12 +64,14 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
       const endDateStr = format(endDate, 'dd_MM_yyyy');
 
       const [revenueRes, profitRes, balanceRes, aircrafts, employees] = await Promise.all([
-        axios.get(`http://0.0.0.0:8000/receita_por_aeronave/${startDateStr}/${endDateStr}/`),
-        axios.get(`http://0.0.0.0:8000/lucro_por_aeronave/${startDateStr}/${endDateStr}/`),
-        axios.get(`http://0.0.0.0:8000/gerar_balanco/${startDateStr}/${endDateStr}/`),
-        axios.get(`http://0.0.0.0:8000/aircraft/`),
-        axios.get(`http://0.0.0.0:8000/employees/`)
+        axios.get(`/api/receita_por_aeronave/${startDateStr}/${endDateStr}/`),
+        axios.get(`/api/lucro_por_aeronave/${startDateStr}/${endDateStr}/`),
+        axios.get(`/api/gerar_balanco/${startDateStr}/${endDateStr}/`),
+        axios.get(`/api/aircraft/`),
+        axios.get(`/api/employees/`)
       ])
+
+      console.log(revenueRes);
       
       setEmployees(employees.data)
       setRevenueData(revenueRes.data)

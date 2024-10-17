@@ -14,6 +14,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import axios from 'axios'
+import { toast } from '@/hooks/use-toast'
+import { format } from 'date-fns'
+import InputMask from 'react-input-mask';
 
 const serviceSchema = z.object({
   data_inicio: z.string().nonempty('Data de início é obrigatória'),
@@ -27,15 +30,12 @@ const serviceSchema = z.object({
   quantidade_de_voos_na_area: z.number().int().positive('Quantidade de voos deve ser um número inteiro positivo'),
   valor_total_da_area: z.number().positive('Valor total da área deve ser positivo'),
   confirmacao_de_pagamento_da_area: z.string().nonempty('Confirmação de pagamento é obrigatória'),
-  tempo_de_voo_gasto_na_area: z.string().nonempty('Tempo de voo é obrigatório'),
+  tempo_de_voo_gasto_na_area: z.string().nonempty('Tempo de vôo necessário'),
   aeronave_id: z.string().nonempty('Aeronave é obrigatória'),
   employee_id: z.string().nonempty('Piloto é obrigatório'),
   confirmacao_de_pagamento_do_piloto: z.enum(['Em aberto', 'Pago'], {
     errorMap: () => ({ message: 'Confirmação de pagamento do piloto é obrigatória' }),
-  }),
-  safra: z.string({
-    required_error: "A safra é obrigatória.",
-  }),
+  })
 })
 
 type ServiceFormData = z.infer<typeof serviceSchema>
@@ -51,7 +51,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
   const [aeronaves, setAeronaves] = useState([])
   const [employees, setEmployees] = useState([])
 
-  const { control, handleSubmit, formState: { errors } } = useForm<ServiceFormData>({
+  const { control, handleSubmit, formState: { errors }, reset, setValue } = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       data_inicio: '',
@@ -69,16 +69,15 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
       aeronave_id: '',
       employee_id: '',
       confirmacao_de_pagamento_do_piloto: undefined,
-      safra: ''
     }
   })
 
   useEffect(() => {
     async function getData() {
-      const avioesData = await axios.get('http://0.0.0.0:8000/aircraft')
+      const avioesData = await axios.get('/api/aircraft')
       setAeronaves(avioesData.data)
 
-      const empregadosData = await axios.get('http://0.0.0.0:8000/employees')
+      const empregadosData = await axios.get('/api/employees')
       setEmployees(empregadosData.data.filter((item) => {
         return item.role === "Piloto"
       }))
@@ -90,14 +89,42 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
 
 
   const onSubmit = (data: ServiceFormData) => {
-    console.log(data);
-
     try {
-      const resp = axios.post('http://0.0.0.0:8000/services', data)
+      if (!selectedSafra.endDate) {
+        toast({
+          title: "Error",
+          description: `Safra não selecionada`,
+          variant: 'destructive'
+        })
+        return
+      }
+      const year = format(selectedSafra.endDate, 'yyyy');
+      const data_inicio_completa = `${data.data_inicio}/${year}`;
+      const data_final_completa = `${data.data_final}/${year}`;
+      const resp = axios.post('/api/services', {
+        ...data,
+        tempo_de_voo_gasto_na_area:
+          parseFloat(data.tempo_de_voo_gasto_na_area),
+        data_inicio: data_inicio_completa,
+        data_final: data_final_completa
+      })
+
+      toast({
+        title: "Serviço cadastrado",
+        description: `O serviço foi cadastrada com sucesso!`,
+      })
+      reset()
     } catch (error) {
       console.log(error);
+
+      toast({
+        title: "Error",
+        description: `Erro ao cadastrar serviço`,
+        variant: 'destructive'
+      })
     }
   }
+
 
   return (
     <div className="p-6 bg-[#4B5320] rounded-lg shadow text-white">
@@ -109,18 +136,34 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
             <Controller
               name="data_inicio"
               control={control}
-              render={({ field }) => <Input type="date" {...field} />}
+              render={({ field }) => (
+                <InputMask mask="99/99" placeholder="MM/DD" {...field}>
+                  {(inputProps) => <Input {...inputProps} />}
+                </InputMask>
+              )}
             />
-            {errors.data_inicio && <p className="text-red-500 text-sm mt-1">{errors.data_inicio.message}</p>}
+            {errors.data_inicio && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.data_inicio.message}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="data_final">Data final</Label>
             <Controller
               name="data_final"
               control={control}
-              render={({ field }) => <Input type="date" {...field} />}
+              render={({ field }) => (
+                <InputMask mask="99/99" placeholder="MM/DD" {...field}>
+                  {(inputProps) => <Input {...inputProps} />}
+                </InputMask>
+              )}
             />
-            {errors.data_final && <p className="text-red-500 text-sm mt-1">{errors.data_final.message}</p>}
+            {errors.data_final && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.data_final.message}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="solicitante_da_area">Solicitante da área</Label>
@@ -130,26 +173,6 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
               render={({ field }) => <Input {...field} />}
             />
             {errors.solicitante_da_area && <p className="text-red-500 text-sm mt-1">{errors.solicitante_da_area.message}</p>}
-          </div>
-          <div>
-            <Label htmlFor="safra">Safra</Label>
-            <Controller
-              name="safra"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a safra" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2023/2024">Safra 2023/2024</SelectItem>
-                    <SelectItem value="2022/2023">Safra 2022/2023</SelectItem>
-                    <SelectItem value="2021/2022">Safra 2021/2022</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.safra && <p className="text-red-500 text-sm">{errors.safra.message}</p>}
           </div>
           <div>
             <Label htmlFor="nome_da_area">Nome da Área</Label>
@@ -238,7 +261,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
             <Controller
               name="tempo_de_voo_gasto_na_area"
               control={control}
-              render={({ field }) => <Input {...field} />}
+              render={({ field }) => <Input {...field} type='number' />}
             />
             {errors.tempo_de_voo_gasto_na_area && <p className="text-red-500 text-sm mt-1">{errors.tempo_de_voo_gasto_na_area.message}</p>}
           </div>
@@ -250,11 +273,12 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger id="aeronave_id" className="border-[#FC862D] focus:ring-[#FC862D]">
-                    <SelectValue placeholder="Selecione a aeronave" />
+                    <SelectValue placeholder="Selecione a aeronave" >
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {aeronaves.map((aeronave) => (
-                      <SelectItem key={aeronave.id} value={aeronave.id}>{aeronave.model}</SelectItem>
+                      <SelectItem key={aeronave.id} value={aeronave.id.toString()}>{aeronave.model}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -270,11 +294,12 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger id="employee_id" className="border-[#FC862D] focus:ring-[#FC862D]">
-                    <SelectValue placeholder="Selecione o piloto" />
+                    <SelectValue placeholder="Selecione o piloto" >
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id}>{employee.name}</SelectItem>
+                      <SelectItem key={employee.id} value={employee.id.toString()}>{employee.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

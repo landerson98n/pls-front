@@ -65,10 +65,12 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
 
   const fetchData = async () => {
     try {
-      const expensesAircraft = await axios.get('http://0.0.0.0:8000/expenses_aircraft');
-      const expensesCommission = await axios.get('http://0.0.0.0:8000/comissions');
-      const expensesVehicle = await axios.get('http://0.0.0.0:8000/expenses_vehicles');
-      const expensesSpecific = await axios.get('http://0.0.0.0:8000/expenses_specific');
+      const expensesAircraft = await axios.get('/api/expenses_aircraft');
+      const expensesCommission = await axios.get('/api/comissions');
+      const expensesVehicle = await axios.get('/api/expenses_vehicles');
+      const expensesSpecific = await axios.get('/api/expenses_specific');
+
+      console.log(expensesAircraft.data);
 
       setExpenses({
         specific: expensesSpecific.data,
@@ -85,7 +87,10 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
     fetchData();
   }, [selectedSafra]);
 
-  const filteredExpenses = expenses[activeTab].filter(expense => {
+  const filteredExpenses = expenses[activeTab]?.filter(expense => {
+    if (!expense) {
+      return null
+    }
     const expenseDate = new Date(expense.data)
     const safraStartDate = selectedSafra ? new Date(selectedSafra.startDate) : null
     const safraEndDate = selectedSafra ? new Date(selectedSafra.endDate) : null
@@ -98,18 +103,15 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
       expense?.id.toString() === searchTerm ||
       expense?.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.origem.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesPaymentStatus = filterPaymentStatus === '' ||
-      expense.confirmação_de_pagamento.toLowerCase() === filterPaymentStatus.toLowerCase()
-
-    return isWithinSafraDates && matchesSearch && matchesPaymentStatus
+      expense.origem.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense?.confirmação_de_pagamento && expense?.confirmação_de_pagamento.toLowerCase().includes(searchTerm.toLowerCase())
+    return isWithinSafraDates && matchesSearch
   })
 
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredExpenses.slice(indexOfFirstItem, indexOfLastItem)
+  const currentItems = filteredExpenses?.slice(indexOfFirstItem, indexOfLastItem)
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
@@ -243,7 +245,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
     </div>
   )
 
-  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage)
+  const totalPages = Math.ceil(filteredExpenses?.length / itemsPerPage)
   const maxVisibleButtons = 5
 
   const renderPaginationButtons = () => {
@@ -305,12 +307,12 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
   }
 
   const renderDesktopTable = (expenses: Expense[]) => (
-    <Table>
+    expenses && <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="w-[50px] text-white">
             <Checkbox
-              checked={selectedExpenses.length === expenses.length}
+              checked={selectedExpenses.length === expenses?.length}
               onCheckedChange={handleSelectAll}
             />
           </TableHead>
@@ -333,7 +335,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {expenses.map((expense) => (
+        {expenses?.map((expense) => (
           <TableRow key={expense.id}>
             <TableCell>
               <Checkbox
@@ -526,18 +528,6 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
                   <Filter className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="hidden sm:flex space-x-2">
-                <Select value={filterPaymentStatus} onValueChange={setFilterPaymentStatus}>
-                  <SelectTrigger className="w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
-                    <SelectValue placeholder="Status de pagamento" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#556B2F] text-white">
-                    <SelectItem value="''">Todos</SelectItem>
-                    <SelectItem value="Pago">Pago</SelectItem>
-                    <SelectItem value="Pendente">Pendente</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <Collapsible open={isFilterOpen} onOpenChange={setIsFilterOpen} className="sm:hidden mb-4">
               <CollapsibleContent>
@@ -572,10 +562,10 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
               )}
             </div>
             <div className="hidden sm:block">
-              {renderDesktopTable(currentItems)}
+              {currentItems && renderDesktopTable(currentItems)}
             </div>
             <div className="sm:hidden">
-              {renderMobileTable(currentItems)}
+              {currentItems && renderMobileTable(currentItems)}
             </div>
             <div className="mt-4 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
               <div>
