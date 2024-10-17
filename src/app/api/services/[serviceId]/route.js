@@ -58,4 +58,40 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Serviço não encontrado' });
     }
   }
+
+  if (req.method === 'PUT') {
+    try {
+      const body = await req.json();
+
+      const {
+        data_inicio,
+        data_final,
+        solicitante_da_area,
+        nome_da_area,
+        aeronave_id,
+        employee_id,
+        criado_por
+      } = body;
+
+      const updatedService = await prisma.services.update({
+        where: {
+          id: Number(serviceId),
+        },
+        data: {
+          data_inicio: new Date(data_inicio),
+          data_final: data_final ? new Date(data_final) : null,
+          solicitante_da_area,
+          nome_da_area,
+          aeronave_id,
+          employee_id,
+          criado_por
+        },
+      });
+
+      return res.status(200).json(updatedService);
+    } catch (error) {
+      console.error('Erro ao atualizar serviço:', error);
+      return res.status(500).json({ error: 'Erro ao atualizar serviço' });
+    }
+  }
 }

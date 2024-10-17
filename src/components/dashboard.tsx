@@ -72,7 +72,7 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
       ])
 
       console.log(revenueRes);
-      
+
       setEmployees(employees.data)
       setRevenueData(revenueRes.data)
       setProfitData(profitRes.data)
@@ -115,6 +115,15 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
     }
     return value.toFixed(0)
   }
+
+  const formatTooltipValue = (value: number) => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+  }
+
+  const formattedData = revenueData.map(item => ({
+    ...item,
+    total_valor_total_da_area: Number(item.total_valor_total_da_area)
+  }))
 
   return (
     <div className="p-6 bg-[#4B5320] rounded-lg shadow text-white">
@@ -206,11 +215,11 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
           <CardContent className='text-white'>
             {balanceData && (
               <>
-                <p>Receita Total: R$ {balanceData.total_valor_area.toLocaleString()}</p>
-                <p>Despesas Totais: R$ {balanceData.total_despesas.toLocaleString()}</p>
-                <p>Lucro Líquido: R$ {balanceData.lucro_liquido.toLocaleString()}</p>
-                <p>Total Gasto com Combustível: R$ {balanceData.total_combustivel_gasto_na_area.toLocaleString()}</p>
-                <p>Total Gasto com Óleo: R$ {balanceData.total_oleo_gasto.toLocaleString()}</p>
+                <p>Receita Total: R$ {Number(balanceData.total_valor_area).toLocaleString()}</p>
+                <p>Despesas Totais: R$ {Number(balanceData.total_despesas).toLocaleString()}</p>
+                <p>Lucro Líquido: R$ {Number(balanceData.lucro_liquido).toLocaleString()}</p>
+                <p>Total Gasto com Combustível: R$ {Number(balanceData.total_combustivel_gasto_na_area).toLocaleString()}</p>
+                <p>Total Gasto com Óleo: R$ {Number(balanceData.total_oleo_gasto).toLocaleString()}</p>
               </>
             )}
           </CardContent>
@@ -222,12 +231,33 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueData}>
-                <XAxis dataKey="aircraft_name" tick={{ fill: 'white' }} />
-                <YAxis tick={{ fill: 'white' }} tickFormatter={formatYAxis} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="total_valor_total_da_area" fill="#82ca9d" name="Receita" />
+              <BarChart data={formattedData}>
+                <XAxis
+                  dataKey="aircraft_name"
+                  tick={{ fill: 'white' }}
+                />
+                <YAxis
+                  tick={{ fill: 'white' }}
+                  tickFormatter={formatYAxis}
+                />
+                <Tooltip
+                  formatter={(value: number) => [formatTooltipValue(value), "Receita"]}
+                  labelStyle={{ color: 'black' }}
+                  contentStyle={{ backgroundColor: '#4B5320', border: 'none' }}
+                />
+                <Legend
+                  wrapperStyle={{ color: 'white' }}
+                />
+                <Bar
+                  dataKey="total_valor_total_da_area"
+                  fill="#82ca9d"
+                  name="Receita"
+                  label={{
+                    position: 'top',
+                    fill: 'white',
+                    formatter: (value: number) => formatTooltipValue(value)
+                  }}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -242,9 +272,22 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
               <BarChart data={profitData}>
                 <XAxis dataKey="aircraft_name" tick={{ fill: 'white' }} />
                 <YAxis tick={{ fill: 'white' }} tickFormatter={formatYAxis} />
-                <Tooltip />
+                <Tooltip
+                  formatter={(value: number) => [formatTooltipValue(value), "Lucro"]}
+                  labelStyle={{ color: 'white' }}
+                  contentStyle={{ backgroundColor: '#4B5320', border: 'none' }}
+                />
                 <Legend />
-                <Bar dataKey="lucro_por_area" fill="#8884d8" name="Lucro" />
+                <Bar
+                  dataKey="lucro_por_area"
+                  fill="#8884d8"
+                  name="Lucro"
+                  label={{
+                    position: 'top',
+                    fill: 'white',
+                    formatter: (value: number) => formatTooltipValue(value)
+                  }}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

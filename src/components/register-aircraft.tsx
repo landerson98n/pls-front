@@ -59,7 +59,7 @@ export function RegisterAircraft() {
               <FormItem>
                 <FormLabel>Matrícula</FormLabel>
                 <FormControl>
-                  <Input placeholder="Matrícula da aeronave" {...field} className="bg-[#556B2F] text-white border-[#8FBC8F]" />
+                  <Input placeholder="Matrícula da aeronave" {...field} className="bg-[#556B2F] text-white border-[#8FBC8F] placeholder:text-gray-400" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -72,7 +72,7 @@ export function RegisterAircraft() {
               <FormItem>
                 <FormLabel>Marca</FormLabel>
                 <FormControl>
-                  <Input placeholder="Marca da aeronave" {...field} className="bg-[#556B2F] text-white border-[#8FBC8F]" />
+                  <Input placeholder="Marca da aeronave" {...field} className="bg-[#556B2F] text-white border-[#8FBC8F] placeholder:text-gray-400" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -85,7 +85,7 @@ export function RegisterAircraft() {
               <FormItem>
                 <FormLabel>Modelo</FormLabel>
                 <FormControl>
-                  <Input placeholder="Modelo da aeronave" {...field} className="bg-[#556B2F] text-white border-[#8FBC8F]" />
+                  <Input placeholder="Modelo da aeronave" {...field} className="bg-[#556B2F] text-white border-[#8FBC8F] placeholder:text-gray-400" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

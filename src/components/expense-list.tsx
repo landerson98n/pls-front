@@ -218,7 +218,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
             <div className="text-xs">
               <p>Aeronave: {expense.aircraft_name}</p>
               <p>Piloto: {expense.employee_name}</p>
-              <p>Valor: R$ {expense.valor}</p>
+              <p>Valor: R$ {Number(expense.valor).toLocaleString()}</p>
               <p>Pagamento: {expense.confirmação_de_pagamento}</p>
             </div>
             {expandedRows.includes(expense.id) && (

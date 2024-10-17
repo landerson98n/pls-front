@@ -255,7 +255,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
               <p>Data de Início: {service.data_inicio}</p>
               <p>Solicitante: {service.solicitante_da_area}</p>
               <p>Área: {service.nome_da_area}</p>
-              <p>Valor Total: R$ {Number(service.valor_total_da_area).toFixed(2)}</p>
+              <p>Valor Total: R$ {Number(service.valor_total_da_area).toLocaleString()}</p>
               <p className={`${service.confirmacao_de_pagamento_da_area.toLowerCase().includes("Em Aberto".toLowerCase()) && 'bg-yellow-400'}`}>{service.confirmacao_de_pagamento_da_area}</p>
             </div>
             {expandedRows.includes(service.id) && (
@@ -267,14 +267,14 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <p>Quantidade no Hopper: {service.quantidade_no_hopper_por_voo}</p>
                 <p>Tipo de Vazão: {service.tipo_de_vazao}</p>
                 <p>Quantidade de Voos: {service.quantidade_de_voos_na_area}</p>
-                <p>Valor por Alqueire: R$ {Number(service.valor_por_alqueire).toFixed(2)}</p>
-                <p>Valor por Hectare: R$ {Number(service.valor_por_hectare).toFixed(2)}</p>
-                <p>Valor Médio por Hora: R$ {Number(service.valor_medio_por_hora_de_voo).toFixed(2)}</p>
+                <p>Valor por Alqueire: R$ {Number(service.valor_por_alqueire).toLocaleString()}</p>
+                <p>Valor por Hectare: R$ {Number(service.valor_por_hectare).toLocaleString()}</p>
+                <p>Valor Médio por Hora: R$ {Number(service.valor_medio_por_hora_de_voo).toLocaleString()}</p>
                 <p>Tempo de Voo: {service.tempo_de_voo_gasto_na_area}</p>
                 <p>Aeronave: {service.aeronave_data}</p>
                 <p>Piloto: {service.employee_data}</p>
-                <p>Lucro: R$ {Number(service.lucro_por_area).toFixed(2)}</p>
-                <p>Percentual de Lucro: {service.percentual_de_lucro_liquido_por_area.toFixed(2)}%</p>
+                <p>Lucro: R$ {Number(service.lucro_por_area).toLocaleString()}</p>
+                <p>Percentual de Lucro: {service.percentual_de_lucro_liquido_por_area.toLocaleString()}%</p>
                 <p>Criado em: {service.criado_em}</p>
                 <p>Criado por: {service.criado_por}</p>
               </div>
@@ -450,7 +450,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <TableCell>{service.aeronave_data}</TableCell>
                 <TableCell>{service.employee_data}</TableCell>
                 <TableCell><p className={`${service.confirmacao_de_pagamento_da_area.toLowerCase().includes("Em Aberto".toLowerCase()) && 'bg-yellow-400'}`}>{service.confirmacao_de_pagamento_da_area}</p></TableCell>
-                <TableCell>R$ {Number(service.valor_total_da_area).toFixed(2)}</TableCell>
+                <TableCell>R$ {Number(service.valor_total_da_area).toLocaleString()}</TableCell>
                 <TableCell>{service.data_inicio}</TableCell>
                 <TableCell>{service.data_final}</TableCell>
                 <TableCell>{service.solicitante_da_area}</TableCell>
@@ -461,12 +461,12 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <TableCell>{service.quantidade_no_hopper_por_voo}</TableCell>
                 <TableCell>{service.tipo_de_vazao}</TableCell>
                 <TableCell>{service.quantidade_de_voos_na_area}</TableCell>
-                <TableCell>R$ {Number(service.valor_por_alqueire).toFixed(2)}</TableCell>
-                <TableCell>R$ {Number(service.valor_por_hectare).toFixed(2)}</TableCell>
-                <TableCell>R$ {Number(service.valor_medio_por_hora_de_voo).toFixed(2)}</TableCell>
+                <TableCell>R$ {Number(service.valor_por_alqueire).toLocaleString()}</TableCell>
+                <TableCell>R$ {Number(service.valor_por_hectare).toLocaleString()}</TableCell>
+                <TableCell>R$ {Number(service.valor_medio_por_hora_de_voo).toLocaleString()}</TableCell>
                 <TableCell>{service.tempo_de_voo_gasto_na_area}</TableCell>
-                <TableCell>R$ {Number(service.lucro_por_area).toFixed(2)}</TableCell>
-                <TableCell>{Number(service.percentual_de_lucro_liquido_por_area).toFixed(2)}%</TableCell>
+                <TableCell>R$ {Number(service.lucro_por_area).toLocaleString()}</TableCell>
+                <TableCell>{Number(service.percentual_de_lucro_liquido_por_area).toLocaleString()}%</TableCell>
                 <TableCell>{service.criado_em}</TableCell>
                 <TableCell>{service.criado_por}</TableCell>
               </TableRow>
