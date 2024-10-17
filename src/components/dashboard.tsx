@@ -200,8 +200,8 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
             <CardContent className='text-white'>
               <p>Área Total Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
               <p>Área Total Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
-              <p>Valor Total Bruto: R$ {aircraftReport.valor_total_bruto_recebido.toLocaleString()}</p>
-              <p>Lucro Total: R$ {aircraftReport.lucro_total.toLocaleString()}</p>
+              <p>Valor Total Bruto: R$ {Number(aircraftReport.valor_total_bruto_recebido).toLocaleString()}</p>
+              <p>Lucro Total: R$ {Number(aircraftReport.lucro_total).toLocaleString()}</p>
               <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
               <p>Valor Médio por Hora de Voo: R$ {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
             </CardContent>
