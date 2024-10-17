@@ -3,27 +3,27 @@ name: Generate a build and push to another branch
 on:
   push:
     branches:
-      - main # The branch name your are commit the new changes
+      - main # A branch onde as novas mudanças são commitadas
 
 jobs:
   build:
     runs-on: ubuntu-latest
     name: Build and Push
     steps:
-      - name: git-checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install all dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: Build
-        run: npm next build # The build command of your project
+      - name: Build Next.js project
+        run: npm run build # Comando de build do Next.js
 
-      - name: Push
+      - name: Push build to another branch
         uses: s0/git-publish-subdir-action@develop
         env:
           REPO: self
-          BRANCH: build # The branch name where you want to push the assets
-          FOLDER: build # The directory where your assets are generated
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub will automatically add this - you don't need to bother getting a token
-          MESSAGE: "Build: ({sha}) {msg}" # The commit message
+          BRANCH: build # A branch para onde os arquivos de build serão enviados
+          FOLDER: .next # O diretório padrão onde o Next.js gera os assets
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Token do GitHub gerado automaticamente
+          MESSAGE: "Build: ({sha}) {msg}" # Mensagem do commit
