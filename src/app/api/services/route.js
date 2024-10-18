@@ -103,8 +103,6 @@ export async function POST(req) {
     }
 }
 
-
-
 export async function DELETE(req) {
     try {
         const { ids } = await req.json();
@@ -134,28 +132,31 @@ export async function DELETE(req) {
     }
 }
 
-export async function PUT(req) {
+export async function PUT(req, res) {
     try {
-        const { ids, paymentStatus } = req.body;
-
-        if (!ids || ids.length === 0) {
-            return res.status(400).json({ error: 'Nenhum serviço selecionado para atualização.' });
+        const data = await req.json();
+        const { id, updatedData } = data.data
+        delete updatedData.id
+        delete updatedData.aeronave_data
+        delete updatedData.employee_data
+        
+        if (!id || !updatedData) {
+            return NextResponse.json({ error: 'ID e dados atualizados são obrigatórios' }, { status: 400 });
         }
 
-        // Atualiza o status de pagamento de múltiplos serviços
-        await prisma.services.updateMany({
-            where: {
-                id: { in: ids },
-            },
+        const updatedService = await prisma.services.update({
+            where: { id: Number(id) },
             data: {
-                confirmacao_de_pagamento_da_area: paymentStatus,
+                ...updatedData,
+                data_inicio: new Date(updatedData.data_inicio),
+                data_final: updatedData.data_final ? new Date(updatedData.data_final) : null,
             },
         });
 
-        return res.status(200).json({ message: 'Status de pagamento atualizado com sucesso.' });
+        return NextResponse.json({ status: 200 }, { message: 'Serviço atualizado com sucesso', updatedService });
     } catch (error) {
-        console.error('Erro ao atualizar status de pagamento:', error);
-        return res.status(500).json({ error: 'Erro ao atualizar status de pagamento.' });
+        console.error('Erro ao atualizar o serviço:', error);
+        return NextResponse.json({ error: 'Erro ao atualizar o serviço' }, { status: 500 });
     }
 }
 

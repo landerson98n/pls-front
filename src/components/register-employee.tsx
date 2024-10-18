@@ -13,7 +13,7 @@ import { toast } from '@/hooks/use-toast'
 
 const employeeSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  employeeType: z.enum(['Piloto', 'Mecânico', 'Administrativo', 'Outro']),
+  employeeType: z.enum(['Auxiliar de pista','Piloto', 'Mecânico', 'Administrativo', 'Outro']),
 })
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>
@@ -80,6 +80,7 @@ export function RegisterEmployee() {
                   <SelectContent className="bg-[#556B2F] text-white">
                     <SelectItem value="Piloto">Piloto</SelectItem>
                     <SelectItem value="Mecânico">Mecânico</SelectItem>
+                    <SelectItem value="Auxiliar de pista">Administrativo</SelectItem>
                     <SelectItem value="Administrativo">Administrativo</SelectItem>
                     <SelectItem value="Outro">Outro</SelectItem>
                   </SelectContent>

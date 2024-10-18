@@ -10,7 +10,7 @@ export async function POST(request) {
         const user = await prisma.users.findUnique({
             where: { username: email }
         })
-        
+
         if (!user) {
             return NextResponse.json({ message: 'Usuário não encontrado' }, { status: 401 })
         }
@@ -22,7 +22,7 @@ export async function POST(request) {
         }
 
         // Gera um token JWT
-        const token = jwt.sign({ id: user.id }, "asdasdasdasdasd", {
+        const token = jwt.sign({ id: user.id }, `${process.env.NEXT_PUBLIC_TOKEN}`, {
             expiresIn: '1h'
         })
 

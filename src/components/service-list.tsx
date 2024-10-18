@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
+import { format } from 'date-fns'
 
 type Service = {
   id: number
@@ -38,7 +39,7 @@ type Service = {
   employee_data: string
   lucro_por_area: number
   percentual_de_lucro_liquido_por_area: number
-  data_inicio: string
+  crador_em: string
   criado_por: string
 }
 
@@ -157,15 +158,38 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
     setEditingService({ ...service })
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editingService) {
-      setServices(prev => prev.map(service =>
-        service.id === editingService.id ? editingService : service
-      ))
-      setEditingId(null)
-      setEditingService(null)
+      try {
+        const response = await axios.put('/api/services', {
+          data: {
+            id: editingService.id,
+            updatedData: {
+              ...editingService,
+              data_inicio: new Date(editingService.data_inicio),
+              data_final: editingService.data_final ? new Date(editingService.data_final) : ''
+            },
+          }
+        });
+
+        console.log(response);
+
+
+        if (response.status === 200) {
+          setServices(prev => prev.map(service =>
+            service.id === editingService.id ? editingService : service
+          ))
+          toast({ title: 'Edição salva com sucesso!' });
+
+          setEditingId(null);
+          setEditingService(null);
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar serviço:', error);
+        toast({ title: 'Erro ao salvar a edição. Tente novamente.', variant: 'destructive' });
+      }
     }
-  }
+  };
 
   const handleCancelEdit = () => {
     setEditingId(null)
@@ -295,6 +319,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
             value={editingService?.[field] || ''}
             onChange={(e) => handleEditInputChange(e, field)}
             type={field === 'valor_total_da_area' || field === 'tamanho_area_hectares' || field === 'tamanho_area_alqueires' ? 'number' : 'text'}
+            className='w-30'
           />
         )
       }
@@ -504,7 +529,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                             {expenses.map((expense) => (
                               parseInt(expense.service_id) === service.id && <TableRow key={expense.id}>
                                 <TableCell>{expense.id}</TableCell>
-                                <TableCell>{expense.data}</TableCell>
+                                <TableCell>{format(expense.data, 'dd/MMyyyy')}</TableCell>
                                 <TableCell>{expense.origem}</TableCell>
                                 <TableCell>{expense.porcentagem}%</TableCell>
                                 <TableCell>R$ {expense.valor}</TableCell>
@@ -521,7 +546,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <TableCell>{service.employee_data}</TableCell>
                 <TableCell>{renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'valor_total_da_area')}</TableCell>
-                <TableCell>{renderEditableCell(service, 'data_inicio')}</TableCell>
+                <TableCell>{format(renderEditableCell(service, 'data_inicio'), 'dd/MM/yyyy')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'data_final')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'solicitante_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'nome_da_area')}</TableCell>

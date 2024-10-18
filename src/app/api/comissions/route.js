@@ -18,7 +18,7 @@ export async function GET() {
             const employee = expense.employees;
 
             const serviceName = service
-                ? `Id: ${service.id} | ${service.solicitante_da_area} | ${service.nome_da_area} de ${service.data_inicio.toLocaleDateString('pt-BR')} até ${service.data_final.toLocaleDateString('pt-BR')}`
+                ? `Id: ${service.id} | ${service.solicitante_da_area} | ${service.nome_da_area} de ${service.data_inicio?.toLocaleDateString('pt-BR')} até ${service.data_final?.toLocaleDateString('pt-BR')}`
                 : 'Serviço não registrado';
 
             const employeeName = employee

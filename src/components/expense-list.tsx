@@ -71,7 +71,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
       const expensesVehicle = await axios.get('/api/expenses_vehicles');
       const expensesSpecific = await axios.get('/api/expenses_specific');
 
-      console.log(expensesAircraft.data);
+      console.log(expensesCommission.data);
 
       setExpenses({
         specific: expensesSpecific.data,
