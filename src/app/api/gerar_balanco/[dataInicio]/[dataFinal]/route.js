@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
     const { dataInicio, dataFinal } = params;
+    console.log(params);
 
     try {
         const startDate = new Date(dataInicio.split('_').reverse().join('-'));
@@ -13,12 +14,13 @@ export async function GET(request, { params }) {
                 valor_total_da_area: true,
             },
             where: {
-                criado_em: {
+                data_inicio: {
                     gte: startDate,
                     lte: endDate,
                 },
             },
         });
+
 
         const total_despesas = await prisma.expenses.aggregate({
             _sum: {
@@ -61,11 +63,11 @@ export async function GET(request, { params }) {
         const lucro_liquido = total_valor_area._sum.valor_total_da_area - total_despesas._sum.valor;
 
         return NextResponse.json({
-            total_valor_area: total_valor_area._sum.valor_total_da_area || 0,
-            total_despesas: total_despesas._sum.valor || 0,
-            total_combustivel_gasto_na_area: total_combustivel_gasto_na_area._sum.valor || 0,
+            total_valor_area: total_valor_area._sum.valor_total_da_area,
+            total_despesas: total_despesas._sum.valor,
+            total_combustivel_gasto_na_area: total_combustivel_gasto_na_area._sum.valor,
             lucro_liquido: lucro_liquido > 0 ? lucro_liquido : 0,
-            total_oleo_gasto: total_de_oleo._sum.valor || 0,
+            total_oleo_gasto: total_de_oleo._sum.valor,
         });
     } catch (error) {
         return NextResponse.json({ error: `Formato de data inválido. Use o formato dd_mm_aaaa. ${error}` }, { status: 400 });

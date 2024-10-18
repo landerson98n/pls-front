@@ -71,8 +71,8 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
         axios.get(`/api/employees/`)
       ])
 
-      console.log(revenueRes);
-
+      console.log(balanceRes.data);
+      
       setEmployees(employees.data)
       setRevenueData(revenueRes.data)
       setProfitData(profitRes.data)

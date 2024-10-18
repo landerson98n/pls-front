@@ -38,7 +38,7 @@ type Service = {
   employee_data: string
   lucro_por_area: number
   percentual_de_lucro_liquido_por_area: number
-  criado_em: string
+  data_inicio: string
   criado_por: string
 }
 
@@ -354,7 +354,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <p>Piloto: {service.employee_data}</p>
                 <p>Lucro: R$ {Number(service.lucro_por_area).toLocaleString()}</p>
                 <p>Percentual de Lucro: {service.percentual_de_lucro_liquido_por_area.toLocaleString()}%</p>
-                <p>Criado em: {service.criado_em}</p>
+                <p>Criado em: {service.data_inicio}</p>
                 <p>Criado por: {service.criado_por}</p>
               </div>
             )}
@@ -537,7 +537,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <TableCell>{renderEditableCell(service, 'tempo_de_voo_gasto_na_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'lucro_por_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'percentual_de_lucro_liquido_por_area')}</TableCell>
-                <TableCell>{service.criado_em}</TableCell>
+                <TableCell>{service.data_inicio}</TableCell>
                 <TableCell>{service.criado_por}</TableCell>
               </TableRow>
             ))}

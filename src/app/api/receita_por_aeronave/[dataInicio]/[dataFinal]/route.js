@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
         where: {
             services: {
                 some: {
-                    criado_em: {
+                    data_inicio: {
                         gte: startDate,
                         lte: endDate,
                     }
@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
             registration: true,
             services: {
                 where: {
-                    criado_em: {
+                    data_inicio: {
                         gte: startDate,
                         lte: endDate,
                     }

@@ -18,7 +18,7 @@ export default async function handler(req, res) {
                 where: {
                     services: {
                         some: {
-                            criado_em: {
+                            data_inicio: {
                                 gte: new Date(today.getFullYear(), currentMonth - 1, 1),
                                 lte: new Date(today.getFullYear(), currentMonth, 0),
                             },

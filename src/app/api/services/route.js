@@ -30,7 +30,7 @@ export async function GET() {
             aeronave_data: `${service.aircraft.registration} - ${service.aircraft.brand} - ${service.aircraft.model}`,
             employee_data: service.employees ? `${service.employees.name} - ${service.employees.role}` : 'Piloto não informado',
             criado_por: service.criado_por,
-            criado_em: service.criado_em,
+            data_inicio: service.data_inicio,
         }));
 
         return NextResponse.json(serviceData, { status: 200 });
@@ -107,7 +107,7 @@ export async function POST(req) {
 
 export async function DELETE(req) {
     try {
-        const { ids } = await req.json();  
+        const { ids } = await req.json();
 
         if (!ids || ids.length === 0) {
             return NextResponse.json({ error: 'Nenhum serviço selecionado para deletar.' }, { status: 400 });

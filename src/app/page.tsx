@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/hooks/use-toast'
 import axios from 'axios'
-
+import { Login } from '@/components/login'
 
 type Safra = {
   id: string;
@@ -31,8 +31,43 @@ export default function Dashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [selectedSafra, setSelectedSafra] = useState<Safra>({ id: '', startDate: '', endDate: '', label: '' })
   const [safras, setSafras] = useState<Safra[]>([])
-  const [newSafraStart, setNewSafraStart] = useState<string>('')
-  const [newSafraEnd, setNewSafraEnd] = useState<string>('')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState<string | null>(null)
+
+
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      // Chama a API de login
+      const response = await axios.post('/api/login', { email, password })
+
+      if (response.status === 200) {
+        localStorage.setItem('token', response.data.token)
+        setIsAuthenticated(true)
+        setUser(response.data.user)
+
+        toast({
+          title: "Login bem-sucedido",
+          description: `Bem-vindo, ${response.data.user.name}!`,
+        })
+      }
+    } catch (error) {
+      console.error('Erro de login:', error)
+
+      toast({
+        title: "Erro de autenticação",
+        description: error.response?.data?.message || "Email ou senha incorretos.",
+        variant: "destructive",
+      })
+    }
+  }
+
+
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    setUser(null)
+    localStorage.setItem('token', '')
+    setActiveComponent('dashboard')
+  }
 
   const renderActiveComponent = () => {
     switch (activeComponent) {
@@ -95,6 +130,7 @@ export default function Dashboard() {
       })
     }
     setSafras(defaultSafras)
+    setSelectedSafra(defaultSafras[0])
   }, [])
 
   const handleSelectSafra = (id: string) => {
@@ -104,6 +140,11 @@ export default function Dashboard() {
 
     setSelectedSafra(safra)
   }
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />
+  }
+
   return (
     <div className="flex flex-col h-screen bg-white lg:flex-row">
       {/* Sidebar for larger screens */}
@@ -139,10 +180,12 @@ export default function Dashboard() {
               </Select>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" className="hidden sm:flex items-center gap-2">
-                Samuel
-                <ChevronDown className="h-4 w-4" />
-              </Button>
+              <div className="hidden sm:flex items-center gap-2">
+                <span>{user.name}</span>
+                <Button variant="ghost" onClick={handleLogout}>
+                  Sair
+                </Button>
+              </div>
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="lg:hidden">
@@ -152,6 +195,12 @@ export default function Dashboard() {
                 <SheetContent side="left" className="w-[300px] sm:w-[400px] bg-[#556B2F]">
                   <nav className="mt-6 text-white">
                     <NavLinks onClick={() => setIsMobileMenuOpen(false)} />
+                    <div className="mt-4 px-4">
+                      <span className="block text-sm mb-2">{user}</span>
+                      <Button variant="outline" onClick={handleLogout} className="w-full">
+                        Sair
+                      </Button>
+                    </div>
                   </nav>
                 </SheetContent>
               </Sheet>

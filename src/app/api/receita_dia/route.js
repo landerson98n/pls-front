@@ -8,12 +8,12 @@ export default async function handler(req, res) {
 
     try {
         const receitaPorDia = await prisma.services.groupBy({
-            by: ['criado_em'],
+            by: ['data_inicio'],
             _sum: {
                 valor_total_da_area: true,
             },
             where: {
-                criado_em: {
+                data_inicio: {
                     gte: firstDayOfMonth,
                     lte: lastDayOfMonth,
                 },
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         });
 
         const formattedData = receitaPorDia.map((dia) => ({
-            day: dia.criado_em.getDate(),
+            day: dia.data_inicio.getDate(),
             total_valor: dia._sum.valor_total_da_area,
         }));
 
