@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line } from 'recharts'
@@ -43,7 +43,7 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
 
   const fetchDataSpecific = async () => {
     const startDateStr = startDate && format(startDate, 'dd_MM_yyyy');
-    const endDateStr = startDate && format(endDate, 'dd_MM_yyyy');
+    const endDateStr = endDate && format(endDate, 'dd_MM_yyyy');
 
     if (selectedAircraftId) {
       const aircraftReportRes = await axios.get(`/api/gerar_relatorio_da_aeronave/${startDateStr}/${endDateStr}/${selectedAircraftId}/`)
@@ -71,8 +71,6 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
         axios.get(`/api/employees/`)
       ])
 
-      console.log(balanceRes.data);
-      
       setEmployees(employees.data)
       setRevenueData(revenueRes.data)
       setProfitData(profitRes.data)
@@ -98,7 +96,7 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
     if (active && payload && payload.length) {
       return (
         <div className="bg-[#4B5320] p-2 rounded shadow-md">
-          <p className="text-white">{`Data: ${format(label, 'dd/MM/yyyy')}`}</p>
+          <p className="text-white">{`Data: ${label}`}</p>
           <p className="text-white">{`Valor: R$ ${payload[0].value.toFixed(2)}`}</p>
         </div>
       )

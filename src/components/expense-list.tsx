@@ -543,7 +543,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
   )
 
   return (
-    <div className="p-4 sm:p-6 bg-[#4B5320] text-white rounded-lg shadow">
+    <div className="p-4 sm:p-6 bg-[#556B2F] text-white rounded-lg shadow">
       <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Lista de Despesas</h2>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 max-md:h-28 h-16">
@@ -561,7 +561,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
                   placeholder="Pesquisar despesas..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full sm:w-64 bg-[#556B2F] text-white border-[#8FBC8F]"
+                  className="w-full sm:w-64 bg-[#556B2F] text-white border-[#8FBC8F] placeholder:text-white"
                 />
                 <Button
                   variant="outline"

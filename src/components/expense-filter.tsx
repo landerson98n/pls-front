@@ -127,7 +127,7 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
 
 
   return (
-    <div className="p-6 bg-[#4B5320] rounded-lg shadow text-white">
+    <div className="p-6 bg-[#556B2F] rounded-lg shadow text-white">
       <h2 className="text-2xl font-bold mb-6 text-white">Cadastrar Despesas</h2>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

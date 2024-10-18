@@ -48,7 +48,7 @@ export function RegisterAircraft() {
   }
 
   return (
-    <div className="p-6 bg-[#4B5320] text-white rounded-lg shadow">
+    <div className="p-6 bg-[#556B2F] text-white rounded-lg shadow">
       <h2 className="text-2xl font-bold mb-6">Cadastrar Aeronave</h2>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

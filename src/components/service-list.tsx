@@ -418,7 +418,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
   )
 
   return (
-    <div className="p-6 bg-[#4B5320] rounded-lg text-white">
+    <div className="p-6 bg-[#556B2F] rounded-lg text-white">
       <div className="flex flex-col space-y-4 mb-6">
         <h2 className="text-2xl font-bold">Serviços:</h2>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">

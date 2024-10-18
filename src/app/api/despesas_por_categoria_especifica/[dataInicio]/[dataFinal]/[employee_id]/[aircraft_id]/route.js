@@ -25,7 +25,7 @@ export async function GET(request, { params }) {
         });
 
         const expenses_data = expenses_results.map(expense => ({
-            date: expense.data,
+            date: expense.data?.toLocaleDateString('pt-BR'),
             value: parseFloat(expense.valor) || 0.0,
         }));
 
