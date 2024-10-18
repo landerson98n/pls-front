@@ -102,3 +102,60 @@ export async function POST(req) {
         return NextResponse.json({ error: 'Erro ao criar serviço' }, { status: 500 });
     }
 }
+
+
+
+export async function DELETE(req) {
+    try {
+        const { ids } = await req.json();  
+
+        if (!ids || ids.length === 0) {
+            return NextResponse.json({ error: 'Nenhum serviço selecionado para deletar.' }, { status: 400 });
+        }
+
+        // Deleta as despesas associadas aos serviços
+        await prisma.expenses.deleteMany({
+            where: {
+                service_id: { in: ids },
+            },
+        });
+
+        // Deleta os serviços
+        await prisma.services.deleteMany({
+            where: {
+                id: { in: ids },
+            },
+        });
+
+        return NextResponse.json({ status: 204 });
+    } catch (error) {
+        console.error('Erro ao deletar serviços:', error);
+        return NextResponse.json({ error: 'Erro ao deletar serviços' }, { status: 500 });
+    }
+}
+
+export async function PUT(req) {
+    try {
+        const { ids, paymentStatus } = req.body;
+
+        if (!ids || ids.length === 0) {
+            return res.status(400).json({ error: 'Nenhum serviço selecionado para atualização.' });
+        }
+
+        // Atualiza o status de pagamento de múltiplos serviços
+        await prisma.services.updateMany({
+            where: {
+                id: { in: ids },
+            },
+            data: {
+                confirmacao_de_pagamento_da_area: paymentStatus,
+            },
+        });
+
+        return res.status(200).json({ message: 'Status de pagamento atualizado com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao atualizar status de pagamento:', error);
+        return res.status(500).json({ error: 'Erro ao atualizar status de pagamento.' });
+    }
+}
+

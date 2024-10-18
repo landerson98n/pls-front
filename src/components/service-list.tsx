@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import axios from 'axios'
+import { toast } from '@/hooks/use-toast'
 
 type Service = {
   id: number
@@ -128,10 +129,28 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
     )
   }
 
-  const handleDeleteSelected = () => {
-    setServices(prev => prev.filter(service => !selectedServices.includes(service.id)))
-    setSelectedServices([])
-  }
+  const handleDeleteSelected = async () => {
+    try {
+      const response = await axios.delete('/api/services/', {
+        data: {
+          ids: selectedServices
+        }
+      })
+
+      setServices(prev => prev.filter(service => !selectedServices.includes(service.id)));
+      setSelectedServices([]);
+      toast({
+        title: "Serviços deletados com sucesso",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro ao deletar os serviços",
+        description: "Ocorreu um erro ao tentar deletar os serviços. Por favor, tente novamente.",
+        variant: "destructive",
+      })
+    }
+  };
+
 
   const handleEditService = (service: Service) => {
     setEditingId(service.id)
@@ -153,14 +172,27 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
     setEditingService(null)
   }
 
-  const handleDeleteService = (serviceId: number) => {
-    setServices(prev => prev.filter(service => service.id !== serviceId))
-  }
+  const handleDeleteService = async (serviceId: number) => {
+    try {
+      const response = await axios.delete('/api/services/', {
+        data: {
+          ids: [serviceId]
+        }
+      })
+      setServices(prev => prev.filter(service => service.id != serviceId));
+      setSelectedServices([]);
+      toast({
+        title: "Serviços deletados com sucesso",
+      })
 
-  const handleBulkUpdate = (field: string, value: string) => {
-    setServices(prev => prev.map(service =>
-      selectedServices.includes(service.id) ? { ...service, [field]: value } : service
-    ))
+    } catch (error) {
+      console.error('Erro ao deletar os serviços', error);
+      toast({
+        title: "Erro ao deletar os serviços",
+        description: "Ocorreu um erro ao tentar deletar os serviços. Por favor, tente novamente.",
+        variant: "destructive",
+      })
+    }
   }
 
   const toggleRowExpansion = (id: number) => {
@@ -228,6 +260,53 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
     }
 
     return buttons
+  }
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof Service) => {
+    const { value } = e.target
+    setEditingService(prev => {
+      if (prev) {
+        return { ...prev, [field]: field === 'valor_total_da_area' || field === 'tamanho_area_hectares' || field === 'tamanho_area_alqueires' ? parseFloat(value) : value }
+      }
+      return null
+    })
+  }
+
+  const renderEditableCell = (service: Service, field: keyof Service) => {
+    if (editingId === service.id) {
+      if (field === 'confirmacao_de_pagamento_da_area') {
+        return (
+          <Select
+            value={editingService?.[field] || ''}
+            onValueChange={(value) => setEditingService(prev => prev ? { ...prev, [field]: value } : null)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Status de pagamento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Pago">Pago</SelectItem>
+              <SelectItem value="Em Aberto">Em Aberto</SelectItem>
+            </SelectContent>
+          </Select>
+        )
+      } else {
+        return (
+          <Input
+            value={editingService?.[field] || ''}
+            onChange={(e) => handleEditInputChange(e, field)}
+            type={field === 'valor_total_da_area' || field === 'tamanho_area_hectares' || field === 'tamanho_area_alqueires' ? 'number' : 'text'}
+          />
+        )
+      }
+    } else {
+      if (field === 'valor_total_da_area' || field === 'valor_por_alqueire' || field === 'valor_por_hectare' || field === 'valor_medio_por_hora_de_voo' || field === 'lucro_por_area') {
+        return `R$ ${Number(service[field]).toLocaleString()}`
+      } else if (field === 'percentual_de_lucro_liquido_por_area') {
+        return `${Number(service[field]).toLocaleString()}%`
+      } else {
+        return service[field]
+      }
+    }
   }
 
   const renderMobileView = () => (
@@ -332,15 +411,6 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
       <div className="flex flex-wrap gap-2 mb-4">
         {selectedServices.length > 0 && (
           <>
-            <Select onValueChange={(value) => handleBulkUpdate('confirmacao_de_pagamento_da_area', value)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Atualizar pagamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Pago">Pago</SelectItem>
-                <SelectItem value="Em aberto">Em aberto</SelectItem>
-              </SelectContent>
-            </Select>
             <Button variant="destructive" onClick={handleDeleteSelected}>
               Deletar Selecionados ({selectedServices.length})
             </Button>
@@ -385,7 +455,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {currentItems.map((service) => (
+            {currentItems?.map((service) => (
               <TableRow key={service.id}>
                 <TableCell>
                   <Checkbox
@@ -394,7 +464,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                   />
                 </TableCell>
                 <TableCell>
-                  <div className="flex space-x-2 text-black">
+                  <div className="flex space-x-2 text-black max-md:hidden">
                     {editingId === service.id ? (
                       <>
                         <Button variant="outline" size="sm" onClick={handleSaveEdit}>
@@ -449,24 +519,24 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <TableCell>{service.id}</TableCell>
                 <TableCell>{service.aeronave_data}</TableCell>
                 <TableCell>{service.employee_data}</TableCell>
-                <TableCell><p className={`${service.confirmacao_de_pagamento_da_area.toLowerCase().includes("Em Aberto".toLowerCase()) && 'bg-yellow-400'}`}>{service.confirmacao_de_pagamento_da_area}</p></TableCell>
-                <TableCell>R$ {Number(service.valor_total_da_area).toLocaleString()}</TableCell>
-                <TableCell>{service.data_inicio}</TableCell>
-                <TableCell>{service.data_final}</TableCell>
-                <TableCell>{service.solicitante_da_area}</TableCell>
-                <TableCell>{service.nome_da_area}</TableCell>
-                <TableCell>{service.tamanho_area_hectares}</TableCell>
-                <TableCell>{service.tamanho_area_alqueires}</TableCell>
-                <TableCell>{service.tipo_aplicacao_na_area}</TableCell>
-                <TableCell>{service.quantidade_no_hopper_por_voo}</TableCell>
-                <TableCell>{service.tipo_de_vazao}</TableCell>
-                <TableCell>{service.quantidade_de_voos_na_area}</TableCell>
-                <TableCell>R$ {Number(service.valor_por_alqueire).toLocaleString()}</TableCell>
-                <TableCell>R$ {Number(service.valor_por_hectare).toLocaleString()}</TableCell>
-                <TableCell>R$ {Number(service.valor_medio_por_hora_de_voo).toLocaleString()}</TableCell>
-                <TableCell>{service.tempo_de_voo_gasto_na_area}</TableCell>
-                <TableCell>R$ {Number(service.lucro_por_area).toLocaleString()}</TableCell>
-                <TableCell>{Number(service.percentual_de_lucro_liquido_por_area).toLocaleString()}%</TableCell>
+                <TableCell>{renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'valor_total_da_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'data_inicio')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'data_final')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'solicitante_da_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'nome_da_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'tamanho_area_hectares')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'tamanho_area_alqueires')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'tipo_aplicacao_na_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'quantidade_no_hopper_por_voo')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'tipo_de_vazao')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'quantidade_de_voos_na_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'valor_por_alqueire')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'valor_por_hectare')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'valor_medio_por_hora_de_voo')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'tempo_de_voo_gasto_na_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'lucro_por_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'percentual_de_lucro_liquido_por_area')}</TableCell>
                 <TableCell>{service.criado_em}</TableCell>
                 <TableCell>{service.criado_por}</TableCell>
               </TableRow>

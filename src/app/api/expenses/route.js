@@ -22,7 +22,6 @@ export async function GET() {
 export async function PUT(req) {
     try {
         const data = await req.json();
-
         const {
             id, data: expenseDate, origem, tipo, descricao, porcentagem, valor, confirmacao_de_pagamento, funcionario_id
         } = data;
@@ -30,7 +29,7 @@ export async function PUT(req) {
         const updatedExpense = await prisma.expenses.update({
             where: { id: parseInt(id) },
             data: {
-                data: new Date(expenseDate),
+                data: expenseDate,
                 origem,
                 tipo,
                 descricao,
@@ -91,5 +90,26 @@ export async function POST(req) {
     } catch (error) {
         console.error('Erro ao criar despesa:', error);
         return NextResponse.json({ error: 'Erro ao criar a despesa' }, { status: 500 });
+    }
+}
+
+export async function DELETE(req) {
+    try {
+        const { ids } = await req.json();
+
+        if (!ids || ids.length === 0) {
+            return NextResponse.json({ error: 'Nenhum serviço selecionado para deletar.' }, { status: 400 });
+        }
+
+        await prisma.expenses.deleteMany({
+            where: {
+                id: { in: ids },
+            },
+        });
+
+        return NextResponse.json({ status: 204 });
+    } catch (error) {
+        console.error('Erro ao deletar serviços:', error);
+        return NextResponse.json({ error: 'Erro ao deletar serviços' }, { status: 500 });
     }
 }

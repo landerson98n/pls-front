@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import axios from 'axios'
-
+import { toast } from '@/hooks/use-toast'
+import { format } from 'date-fns'
 type Expense = {
   id: number
   data: string
@@ -136,47 +137,117 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
     setEditingExpense({ ...expense })
   }
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editingExpense) {
-      setExpenses(prev => ({
-        ...prev,
-        [activeTab]: prev[activeTab].map(expense =>
-          expense.id === editingExpense.id ? editingExpense : expense
-        )
-      }))
-      setEditingId(null)
-      setEditingExpense(null)
+      try {
+        // Faz a chamada à API para atualizar a despesa no banco de dados
+        const response = await axios.put('/api/expenses', {
+          id: editingExpense.id,
+          updatedData: { ...editingExpense, data: new Date(editingExpense.data) },
+        });
+
+        if (response.status === 200) {
+          // Atualiza o estado local se o update for bem-sucedido
+          setExpenses(prevExpenses => ({
+            ...prevExpenses,  // Preserva as outras abas
+            [activeTab]: prevExpenses[activeTab].map(expense =>
+              expense.id === editingExpense.id ? editingExpense : expense
+            ),  // Atualiza a despesa dentro da aba ativa
+          }));
+
+          // Limpa o estado de edição após salvar
+          setEditingId(null);
+          setEditingExpense(null);
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar despesa:', error);
+        toast({ title: 'Erro ao salvar a edição. Tente novamente.', variant: 'destructive' });
+      }
     }
-  }
+  };
+
 
   const handleCancelEdit = () => {
     setEditingId(null)
     setEditingExpense(null)
   }
 
-  const handleDelete = (id: number) => {
-    setExpenses(prev => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter(expense => expense.id !== id)
-    }))
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await axios.delete('/api/expenses/', {
+        data: {
+          ids: [id]
+        }
+      })
+      setExpenses(prev => ({
+        ...prev,
+        [activeTab]: prev[activeTab].filter(expense => expense.id !== id)
+      }))
+      toast({
+        title: "Despesas deletadas com sucesso",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro ao deletar os Despesas",
+        description: "Ocorreu um erro ao tentar deletar os Despesas. Por favor, tente novamente.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleDeleteSelected = () => {
-    setExpenses(prev => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter(expense => !selectedExpenses.includes(expense.id))
-    }))
-    setSelectedExpenses([])
-  }
+  const handleDeleteSelected = async () => {
+    try {
+      const response = await axios.delete('/api/expenses/', {
+        data: {
+          ids: selectedExpenses
+        }
+      })
 
-  const handleBulkUpdate = (field: string, value: string) => {
-    setExpenses(prev => ({
-      ...prev,
-      [activeTab]: prev[activeTab].map(expense =>
-        selectedExpenses.includes(expense.id) ? { ...expense, [field]: value } : expense
-      )
-    }))
-  }
+      setExpenses(prev => ({
+        ...prev,
+        [activeTab]: prev[activeTab].filter(expense => !selectedExpenses.includes(expense.id))
+      }))
+      setSelectedExpenses([])
+      toast({
+        title: "Despesas deletadas com sucesso",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro ao deletar os Despesas",
+        description: "Ocorreu um erro ao tentar deletar os Despesas. Por favor, tente novamente.",
+        variant: "destructive",
+      })
+    }
+  };
+
+
+  const handleBulkUpdate = async (field: string, value: string) => {
+    try {
+      const response = await axios.put('/api/expenses/bulk-update', {
+        ids: selectedExpenses, 
+        field: 'confirma__o_de_pagamento',             
+        value                  
+      });
+
+      if (response.status === 200) {
+        setExpenses(prev => ({
+          ...prev,
+          [activeTab]: prev[activeTab].map(expense =>
+            selectedExpenses.includes(expense.id) ? { ...expense, [field]: value } : expense
+          )
+        }));
+      }
+      toast({
+        title: "Despesas Atualizadas",
+      })
+    } catch (error) {
+      console.error('Erro ao atualizar despesas em lote:', error);
+      toast({
+        title: "Erro ao atualizar despesas. Tente novamente.",
+        variant: "destructive",
+      })
+    }
+  };
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -344,7 +415,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
               />
             </TableCell>
             <TableCell>
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 max-md:hidden">
                 {editingId === expense.id ? (
                   <>
                     <Button variant="outline" size="icon" onClick={handleSaveEdit}>
@@ -367,43 +438,16 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
             <TableCell>{expense.id}</TableCell>
             {activeTab !== 'commission' && (
               <TableCell>
-                {editingId === expense.id ? (
-                  <Input
-                    name="aircraft_name"
-                    value={editingExpense?.aircraft_name || ''}
-                    onChange={handleEditInputChange}
-                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                  />
-                ) : (
-                  expense.aircraft_name
-                )}
+                {expense.aircraft_name}
               </TableCell>
             )}
             {activeTab === 'commission' && (
               <>
                 <TableCell>
-                  {editingId === expense.id ? (
-                    <Input
-                      name="employee_name"
-                      value={editingExpense?.employee_name || ''}
-                      onChange={handleEditInputChange}
-                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                    />
-                  ) : (
-                    expense.employee_name
-                  )}
+                  {expense.employee_name}
                 </TableCell>
                 <TableCell>
-                  {editingId === expense.id ? (
-                    <Input
-                      name="service_name"
-                      value={editingExpense?.service_name || ''}
-                      onChange={handleEditInputChange}
-                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                    />
-                  ) : (
-                    expense.service_name
-                  )}
+                  {expense.service_name}
                 </TableCell>
                 <TableCell>
                   {editingId === expense.id ? (
@@ -429,7 +473,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
                   className="bg-[#556B2F] text-white border-[#8FBC8F]"
                 />
               ) : (
-                expense.data
+                format(expense.data, "dd-MM-yyyy")
               )}
             </TableCell>
             <TableCell>{expense.origem}</TableCell>
