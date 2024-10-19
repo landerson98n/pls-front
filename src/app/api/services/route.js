@@ -21,8 +21,8 @@ export async function GET() {
         
             return {
                 id: service.id,
-                data_inicio: service.data_inicio.toLocaleDateString(),
-                data_final: service.data_final.toLocaleDateString(),
+                data_inicio: service.data_inicio,
+                data_final: service.data_final,
                 solicitante_da_area: service.solicitante_da_area,
                 nome_da_area: service.nome_da_area,
                 tamanho_area_hectares: service.tamanho_area_hectares,

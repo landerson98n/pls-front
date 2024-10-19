@@ -270,8 +270,8 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
               <SelectValue placeholder="Selecione a aeronave" />
             </SelectTrigger>
             <SelectContent>
-              {revenueData.map((item) => (
-                <SelectItem key={item.aircraft_name} value={item.aircraft_name}>{item.aircraft_name}</SelectItem>
+              {aircrafts?.map((item) => (
+                <SelectItem key={item.registration} value={item.registration}>{item.registration}</SelectItem>
               ))}
             </SelectContent>
           </Select>

@@ -3,18 +3,15 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
     const { dataInicio, dataFinal, aircraft_id } = params;
-
+    
     try {
-        // Converter a data de 'dd_mm_yyyy' para o formato correto do JavaScript
         const startDate = new Date(dataInicio.split('_').reverse().join('-'));
         const endDate = new Date(dataFinal.split('_').reverse().join('-'));
 
-        // Validar as datas
         if (isNaN(startDate) || isNaN(endDate)) {
             return NextResponse.json({ error: 'Formato de data inválido. Use o formato dd_mm_aaaa.' }, { status: 400 });
         }
 
-        // Buscar os serviços e despesas associadas à aeronave
         const servicos_e_despesas = await prisma.services.findMany({
             where: {
                 aeronave_id: parseInt(aircraft_id),
@@ -26,7 +23,7 @@ export async function GET(request, { params }) {
             include: {
                 expenses: true,
             },
-        });
+        });        
 
         if (!servicos_e_despesas.length) {
             return NextResponse.json({

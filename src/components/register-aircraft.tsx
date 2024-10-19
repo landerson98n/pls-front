@@ -31,7 +31,6 @@ export function RegisterAircraft() {
   const onSubmit = async (data: AircraftFormValues) => {
     try {
       const response = await axios.post('/api/aircraft', data)
-      console.log('Aircraft created:', response.data)
       toast({
         title: "Aeronave cadastrada com sucesso!",
         description: `A aeronave ${data.registration} foi adicionada.`,

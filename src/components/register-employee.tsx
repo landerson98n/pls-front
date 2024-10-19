@@ -30,7 +30,6 @@ export function RegisterEmployee() {
   const onSubmit = async (data: EmployeeFormValues) => {
     try {
       const response = await axios.post('/api/employees', { name: data.name, role: data.employeeType })
-      console.log('Employee created:', response.data)
       toast({
         title: "Funcionário cadastrado com sucesso!",
         description: `${data.name} foi adicionado como ${data.employeeType}.`,

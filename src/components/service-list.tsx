@@ -90,8 +90,8 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
 
   const filteredServices = services.filter(service => {
     const serviceDate = new Date(service.data_inicio)
-    const safraStartDate = selectedSafra ? new Date(selectedSafra.dataInicio) : null
-    const safraEndDate = selectedSafra ? new Date(selectedSafra.dataFinal) : null
+    const safraStartDate = new Date(selectedSafra.dataInicio) 
+    const safraEndDate =  new Date(selectedSafra.dataFinal) 
 
     const isWithinSafraDates = !selectedSafra ||
       (serviceDate >= safraStartDate && serviceDate <= safraEndDate)
@@ -505,8 +505,6 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 />
               </TableHead>
 
-
-
               <TableHead className='text-white'>
                 Tempo de Voo
                 <Input
@@ -630,7 +628,12 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <TableCell>{service.id}</TableCell>
                 <TableCell>{renderEditableCell(service, 'aeronave_data')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'employee_data')}</TableCell>
-                <TableCell>{renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell>
+                {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')
+                    ?.toString()
+                    .toLowerCase()
+                    .includes("aberto") ? 
+                    <TableCell className='bg-yellow-600'> {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell> : 
+                    <TableCell> {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell> }
                 <TableCell>{renderEditableCell(service, 'solicitante_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'nome_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'tamanho_area_hectares')}</TableCell>
@@ -654,7 +657,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                     if (!isNaN(parsedDate)) {
                       return format(parsedDate, 'dd/MM/yyyy');
                     } else {
-                      return '-'; // Retorna '-' caso a data seja inválida
+                      return '-';
                     }
                   })()}
                 </TableCell>

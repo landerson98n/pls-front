@@ -654,24 +654,6 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
         </TabsList>
         {expenseTypes.map((type) => (
           <TabsContent key={type.key} value={type.key}>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
-              <div className="w-full sm:w-auto flex items-center space-x-2">
-                <Input
-                  placeholder="Pesquisar despesas..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full sm:w-64 bg-[#556B2F] text-white border-[#8FBC8F] placeholder:text-white"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  className="sm:hidden"
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
             <Collapsible open={isFilterOpen} onOpenChange={setIsFilterOpen} className="sm:hidden mb-4">
               <CollapsibleContent>
                 <Select value={filterPaymentStatus} onValueChange={setFilterPaymentStatus}>

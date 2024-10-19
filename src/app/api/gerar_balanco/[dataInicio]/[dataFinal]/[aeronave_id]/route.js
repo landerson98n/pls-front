@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
     const { dataInicio, dataFinal, aeronave_id } = params;
-    console.log(params);
 
     try {
         const startDate = new Date(dataInicio.split('_').reverse().join('-'));

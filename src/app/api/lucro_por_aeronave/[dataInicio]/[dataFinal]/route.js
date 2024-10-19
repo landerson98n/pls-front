@@ -6,7 +6,7 @@ export async function GET(request, { params }) {
 
     const startDate = new Date(dataInicio.split('_').reverse().join('-'));
     const endDate = new Date(dataFinal.split('_').reverse().join('-'));
-
+    const dataar = await prisma.aircraft.findMany({})
     const results = await prisma.aircraft.findMany({
         where: {
             services: {
@@ -20,6 +20,7 @@ export async function GET(request, { params }) {
         },
         select: {
             registration: true,
+            model: true,
             services: {
                 where: {
                     data_inicio: {
@@ -33,7 +34,7 @@ export async function GET(request, { params }) {
             },
         },
     });
-
+    
     const aircraft_services = results.map(aircraft => {
         const lucro_por_area = aircraft.services.reduce((acc, service) => acc + (parseFloat(service.lucro_por_area) || 0), 0);
         return {
