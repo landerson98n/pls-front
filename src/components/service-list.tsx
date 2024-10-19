@@ -89,7 +89,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
   }
 
   const filteredServices = services.filter(service => {
-    const serviceDate = new Date(service.data_final)
+    const serviceDate = new Date(service.criado_em)
     const safraStartDate = new Date(selectedSafra.dataInicio) 
     const safraEndDate =  new Date(selectedSafra.dataFinal) 
 

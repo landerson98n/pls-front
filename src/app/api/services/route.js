@@ -10,13 +10,16 @@ export async function GET() {
             }
         });
 
+
         const serviceData = await Promise.all(services.map(async (service) => {
             const user = await prisma.users.findFirst({
                 where: {
                     id: service.criado_por
                 }
             });
-        
+
+
+
             return {
                 id: service.id,
                 data_inicio: service.data_inicio,
@@ -39,9 +42,10 @@ export async function GET() {
                 criado_por: user.name,
                 lucro_por_area: service.lucro_por_area,
                 percentual_de_lucro_liquido_por_area: service.percentual_de_lucro_liquido_por_area,
-                valor_medio_por_hora_de_voo: service.valor_medio_por_hora_de_voo
+                valor_medio_por_hora_de_voo: service.valor_medio_por_hora_de_voo,
+                criado_em: service.criado_em
             }
-        }));        
+        }));
 
         return NextResponse.json(serviceData, { status: 200 });
     } catch (error) {

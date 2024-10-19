@@ -11,7 +11,7 @@ export default async function handler(req, res) {
           valor_total_da_area: true,
         },
         where: {
-          data_final: {
+          criado_em: {
             gte: new Date(today.getFullYear(), currentMonth - 1, 1),
             lte: new Date(today.getFullYear(), currentMonth, 0),
           },

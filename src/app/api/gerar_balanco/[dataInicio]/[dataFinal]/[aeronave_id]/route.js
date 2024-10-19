@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
                 valor_total_da_area: true,
             },
             where: {
-                data_final: {
+                criado_em: {
                     gte: startDate,
                     lte: endDate,
                 },
@@ -73,7 +73,7 @@ export async function GET(request, { params }) {
         });
     } catch (error) {
         console.log(error);
-        
+
         return NextResponse.json({ error: `Formato de data inválido. Use o formato dd_mm_aaaa. ${error}` }, { status: 400 });
     }
 }

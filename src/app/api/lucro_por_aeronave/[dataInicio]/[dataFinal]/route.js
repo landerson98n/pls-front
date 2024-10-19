@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
         where: {
             services: {
                 some: {
-                    data_final: {
+                    criado_em: {
                         gte: startDate,
                         lte: endDate,
                     }
@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
             model: true,
             services: {
                 where: {
-                    data_final: {
+                    criado_em: {
                         gte: startDate,
                         lte: endDate,
                     }
