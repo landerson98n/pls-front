@@ -7,13 +7,12 @@ export async function GET(request, { params }) {
     try {
         const startDate = new Date(dataInicio.split('_').reverse().join('-'));
         const endDate = new Date(dataFinal.split('_').reverse().join('-'));
-
         const total_valor_area = await prisma.services.aggregate({
             _sum: {
                 valor_total_da_area: true,
             },
             where: {
-                data_inicio: {
+                data_final: {
                     gte: startDate,
                     lte: endDate,
                 },

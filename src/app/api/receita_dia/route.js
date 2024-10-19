@@ -13,7 +13,7 @@ export default async function handler(req, res) {
                 valor_total_da_area: true,
             },
             where: {
-                data_inicio: {
+                data_final: {
                     gte: firstDayOfMonth,
                     lte: lastDayOfMonth,
                 },

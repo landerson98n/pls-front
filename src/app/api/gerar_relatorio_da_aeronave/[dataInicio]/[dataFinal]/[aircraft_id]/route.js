@@ -15,7 +15,7 @@ export async function GET(request, { params }) {
         const servicos_e_despesas = await prisma.services.findMany({
             where: {
                 aeronave_id: parseInt(aircraft_id),
-                data_inicio: {
+                data_final: {
                     gte: startDate,
                     lte: endDate,
                 },
@@ -23,7 +23,8 @@ export async function GET(request, { params }) {
             include: {
                 expenses: true,
             },
-        });        
+        });   
+                
 
         if (!servicos_e_despesas.length) {
             return NextResponse.json({

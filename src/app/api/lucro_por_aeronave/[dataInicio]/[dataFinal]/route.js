@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
         where: {
             services: {
                 some: {
-                    data_inicio: {
+                    data_final: {
                         gte: startDate,
                         lte: endDate,
                     }
@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
             model: true,
             services: {
                 where: {
-                    data_inicio: {
+                    data_final: {
                         gte: startDate,
                         lte: endDate,
                     }
@@ -34,7 +34,7 @@ export async function GET(request, { params }) {
             },
         },
     });
-    
+
     const aircraft_services = results.map(aircraft => {
         const lucro_por_area = aircraft.services.reduce((acc, service) => acc + (parseFloat(service.lucro_por_area) || 0), 0);
         return {

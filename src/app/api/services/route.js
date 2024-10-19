@@ -10,8 +10,6 @@ export async function GET() {
             }
         });
 
-
-
         const serviceData = await Promise.all(services.map(async (service) => {
             const user = await prisma.users.findFirst({
                 where: {

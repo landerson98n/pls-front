@@ -7,13 +7,13 @@ export async function GET(request, { params }) {
     const startDate = new Date(dataInicio.split('_').reverse().join('-'));
     const endDate = new Date(dataFinal.split('_').reverse().join('-'));
 
-;
-    
+    ;
+
     const results = await prisma.aircraft.findMany({
         where: {
             services: {
                 some: {
-                    data_inicio: {
+                    data_final: {
                         gte: startDate,
                         lte: endDate,
                     }
@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
             registration: true,
             services: {
                 where: {
-                    data_inicio: {
+                    data_final: {
                         gte: startDate,
                         lte: endDate,
                     }
@@ -43,6 +43,6 @@ export async function GET(request, { params }) {
             total_valor_total_da_area,
         };
     });
-    
+
     return NextResponse.json(aircraft_services);
 }
