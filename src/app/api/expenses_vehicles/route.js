@@ -16,8 +16,9 @@ export async function GET() {
             descricao: expense.descricao,
             valor: expense.valor,
             confirmação_de_pagamento: expense.confirma__o_de_pagamento,
-            aircraft_name: aircraft ? `${aircraft.registration} - ${aircraft.model} - ${aircraft.brand}` : null,
-        };
+            aircraft_name: aircraft ? `${aircraft.registration} - ${aircraft.model} - ${aircraft.brand}` : null, 
+            aircraft_id: expense.aircraft_id,
+            employee_id: expense.employee_id};
     }));
 
     return NextResponse.json(expensesData);

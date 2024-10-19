@@ -101,3 +101,10 @@ model users {
   @@index([name], map: "ix_users_name")
   @@index([role], map: "ix_users_role")
 }
+
+model safras {
+  id         String   @id @unique(map: "id") @default(dbgenerated("(uuid())")) @db.VarChar(36)
+  dataInicio DateTime @db.Date
+  dataFinal  DateTime @db.Date
+  label      String   @db.VarChar(20)
+}

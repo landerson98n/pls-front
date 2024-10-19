@@ -36,6 +36,8 @@ export async function GET() {
                 confirmação_de_pagamento: expense.confirma__o_de_pagamento,
                 service_name: serviceName,
                 employee_name: employeeName,
+                aircraft_id: service.aeronave_id,
+                employee_id: employee.id
             };
         });
 

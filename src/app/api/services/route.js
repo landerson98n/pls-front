@@ -10,28 +10,40 @@ export async function GET() {
             }
         });
 
-        const serviceData = services.map(service => ({
-            id: service.id,
-            data_inicio: service.data_inicio.toLocaleDateString(),
-            data_final: service.data_final ? service.data_final.toLocaleDateString() : null,
-            solicitante_da_area: service.solicitante_da_area,
-            nome_da_area: service.nome_da_area,
-            tamanho_area_hectares: service.tamanho_area_hectares,
-            tamanho_area_alqueires: service.tamanho_area_alqueires,
-            tipo_aplicacao_na_area: service.tipo_aplicacao_na_area,
-            quantidade_no_hopper_por_voo: service.quantidade_no_hopper_por_voo,
-            tipo_de_vazao: service.tipo_de_vazao,
-            quantidade_de_voos_na_area: service.quantidade_de_voos_na_area,
-            valor_por_alqueire: service.valor_por_alqueire,
-            valor_por_hectare: service.valor_por_hectare,
-            valor_total_da_area: service.valor_total_da_area,
-            confirmacao_de_pagamento_da_area: service.confirmacao_de_pagamento_da_area,
-            tempo_de_voo_gasto_na_area: service.tempo_de_voo_gasto_na_area,
-            aeronave_data: `${service.aircraft.registration} - ${service.aircraft.brand} - ${service.aircraft.model}`,
-            employee_data: service.employees ? `${service.employees.name} - ${service.employees.role}` : 'Piloto não informado',
-            criado_por: service.criado_por,
-            data_inicio: service.data_inicio,
-        }));
+
+
+        const serviceData = await Promise.all(services.map(async (service) => {
+            const user = await prisma.users.findFirst({
+                where: {
+                    id: service.criado_por
+                }
+            });
+        
+            return {
+                id: service.id,
+                data_inicio: service.data_inicio.toLocaleDateString(),
+                data_final: service.data_final.toLocaleDateString(),
+                solicitante_da_area: service.solicitante_da_area,
+                nome_da_area: service.nome_da_area,
+                tamanho_area_hectares: service.tamanho_area_hectares,
+                tamanho_area_alqueires: service.tamanho_area_alqueires,
+                tipo_aplicacao_na_area: service.tipo_aplicacao_na_area,
+                quantidade_no_hopper_por_voo: service.quantidade_no_hopper_por_voo,
+                tipo_de_vazao: service.tipo_de_vazao,
+                quantidade_de_voos_na_area: service.quantidade_de_voos_na_area,
+                valor_por_alqueire: service.valor_por_alqueire,
+                valor_por_hectare: service.valor_por_hectare,
+                valor_total_da_area: service.valor_total_da_area,
+                confirmacao_de_pagamento_da_area: service.confirmacao_de_pagamento_da_area,
+                tempo_de_voo_gasto_na_area: service.tempo_de_voo_gasto_na_area,
+                aeronave_data: `${service.aircraft.registration} - ${service.aircraft.brand} - ${service.aircraft.model}`,
+                employee_data: service.employees ? `${service.employees.name} - ${service.employees.role}` : 'Piloto não informado',
+                criado_por: user.name,
+                lucro_por_area: service.lucro_por_area,
+                percentual_de_lucro_liquido_por_area: service.percentual_de_lucro_liquido_por_area,
+                valor_medio_por_hora_de_voo: service.valor_medio_por_hora_de_voo
+            }
+        }));        
 
         return NextResponse.json(serviceData, { status: 200 });
     } catch (error) {
@@ -139,7 +151,7 @@ export async function PUT(req, res) {
         delete updatedData.id
         delete updatedData.aeronave_data
         delete updatedData.employee_data
-        
+
         if (!id || !updatedData) {
             return NextResponse.json({ error: 'ID e dados atualizados são obrigatórios' }, { status: 400 });
         }

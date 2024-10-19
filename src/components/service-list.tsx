@@ -39,7 +39,7 @@ type Service = {
   employee_data: string
   lucro_por_area: number
   percentual_de_lucro_liquido_por_area: number
-  crador_em: string
+  criado_em: string
   criado_por: string
 }
 
@@ -56,8 +56,8 @@ type Expense = {
 
 type Safra = {
   id: string;
-  startDate: string;
-  endDate: string;
+  dataInicio: string;
+  dataFinal: string;
   label: string;
 }
 
@@ -69,10 +69,9 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [expandedRows, setExpandedRows] = useState<number[]>([])
 
-  // State variables for pagination, filtering, and search
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [filters, setFilters] = useState<{ [key in keyof Service]?: string }>({})
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,30 +88,24 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
     return servicos.data as Service[] || []
   }
 
-  // Filter and search function
   const filteredServices = services.filter(service => {
     const serviceDate = new Date(service.data_inicio)
-    const safraStartDate = selectedSafra ? new Date(selectedSafra.startDate) : null
-    const safraEndDate = selectedSafra ? new Date(selectedSafra.endDate) : null
+    const safraStartDate = selectedSafra ? new Date(selectedSafra.dataInicio) : null
+    const safraEndDate = selectedSafra ? new Date(selectedSafra.dataFinal) : null
 
     const isWithinSafraDates = !selectedSafra ||
       (serviceDate >= safraStartDate && serviceDate <= safraEndDate)
 
-    const matchesSearch =
-      service.aeronave_data.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.employee_data.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.confirmacao_de_pagamento_da_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.nome_da_area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.solicitante_da_area.toLowerCase().includes(searchTerm.toLowerCase())
-    return isWithinSafraDates && matchesSearch
+    return isWithinSafraDates && Object.entries(filters).every(([key, value]) => {
+      if (!value) return true
+      const serviceValue = service[key as keyof Service]?.toString()
+      return typeof serviceValue === 'string' && serviceValue.toLowerCase().includes(value.toLowerCase().toString())
+    })
   })
 
-  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
   const currentItems = filteredServices.slice(indexOfFirstItem, indexOfLastItem)
-
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -132,17 +125,10 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
 
   const handleDeleteSelected = async () => {
     try {
-      const response = await axios.delete('/api/services/', {
-        data: {
-          ids: selectedServices
-        }
-      })
-
-      setServices(prev => prev.filter(service => !selectedServices.includes(service.id)));
-      setSelectedServices([]);
-      toast({
-        title: "Serviços deletados com sucesso",
-      })
+      await axios.delete('/api/services/', { data: { ids: selectedServices } })
+      setServices(prev => prev.filter(service => !selectedServices.includes(service.id)))
+      setSelectedServices([])
+      toast({ title: "Serviços deletados com sucesso" })
     } catch (error) {
       toast({
         title: "Erro ao deletar os serviços",
@@ -150,8 +136,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
         variant: "destructive",
       })
     }
-  };
-
+  }
 
   const handleEditService = (service: Service) => {
     setEditingId(service.id)
@@ -170,26 +155,22 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
               data_final: editingService.data_final ? new Date(editingService.data_final) : ''
             },
           }
-        });
-
-        console.log(response);
-
+        })
 
         if (response.status === 200) {
           setServices(prev => prev.map(service =>
             service.id === editingService.id ? editingService : service
           ))
-          toast({ title: 'Edição salva com sucesso!' });
-
-          setEditingId(null);
-          setEditingService(null);
+          toast({ title: 'Edição salva com sucesso!' })
+          setEditingId(null)
+          setEditingService(null)
         }
       } catch (error) {
-        console.error('Erro ao atualizar serviço:', error);
-        toast({ title: 'Erro ao salvar a edição. Tente novamente.', variant: 'destructive' });
+        console.error('Erro ao atualizar serviço:', error)
+        toast({ title: 'Erro ao salvar a edição. Tente novamente.', variant: 'destructive' })
       }
     }
-  };
+  }
 
   const handleCancelEdit = () => {
     setEditingId(null)
@@ -198,22 +179,15 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
 
   const handleDeleteService = async (serviceId: number) => {
     try {
-      const response = await axios.delete('/api/services/', {
-        data: {
-          ids: [serviceId]
-        }
-      })
-      setServices(prev => prev.filter(service => service.id != serviceId));
-      setSelectedServices([]);
-      toast({
-        title: "Serviços deletados com sucesso",
-      })
-
+      await axios.delete('/api/services/', { data: { ids: [serviceId] } })
+      setServices(prev => prev.filter(service => service.id !== serviceId))
+      setSelectedServices([])
+      toast({ title: "Serviço deletado com sucesso" })
     } catch (error) {
-      console.error('Erro ao deletar os serviços', error);
+      console.error('Erro ao deletar o serviço', error)
       toast({
-        title: "Erro ao deletar os serviços",
-        description: "Ocorreu um erro ao tentar deletar os serviços. Por favor, tente novamente.",
+        title: "Erro ao deletar o serviço",
+        description: "Ocorreu um erro ao tentar deletar o serviço. Por favor, tente novamente.",
         variant: "destructive",
       })
     }
@@ -223,67 +197,6 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
     setExpandedRows(prev =>
       prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
     )
-  }
-
-  const totalPages = Math.ceil(filteredServices.length / itemsPerPage)
-  const maxVisibleButtons = 5
-
-  const renderPaginationButtons = () => {
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2))
-    let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1)
-
-    if (endPage - startPage + 1 < maxVisibleButtons) {
-      startPage = Math.max(1, endPage - maxVisibleButtons + 1)
-    }
-
-    const buttons = []
-
-    if (startPage > 1) {
-      buttons.push(
-        <Button key="first" onClick={() => paginate(1)} variant="outline" className="text-white">
-          <ChevronsLeft className="h-4 w-4 text-black" />
-        </Button>
-      )
-    }
-
-    if (currentPage > 1) {
-      buttons.push(
-        <Button key="prev" onClick={() => paginate(currentPage - 1)} variant="outline" className="text-white">
-          <ChevronLeft className="h-4 w-4 text-black" />
-        </Button>
-      )
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      buttons.push(
-        <Button
-          key={i}
-          onClick={() => paginate(i)}
-          variant={currentPage === i ? "default" : "outline"}
-          className={`${currentPage === i ? "bg-[#8FBC8F] text-white" : "text-black"}`}
-        >
-          {i}
-        </Button>
-      )
-    }
-
-    if (currentPage < totalPages) {
-      buttons.push(
-        <Button key="next" onClick={() => paginate(currentPage + 1)} variant="outline" className="text-white">
-          <ChevronRight className="h-4 w-4 text-black" />
-        </Button>
-      )
-    }
-
-    if (endPage < totalPages) {
-      buttons.push(
-        <Button key="last" onClick={() => paginate(totalPages)} variant="outline" className="text-white">
-          <ChevronsRight className="h-4 w-4 text-black" />
-        </Button>
-      )
-    }
-
-    return buttons
   }
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof Service) => {
@@ -379,7 +292,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <p>Piloto: {service.employee_data}</p>
                 <p>Lucro: R$ {Number(service.lucro_por_area).toLocaleString()}</p>
                 <p>Percentual de Lucro: {service.percentual_de_lucro_liquido_por_area.toLocaleString()}%</p>
-                <p>Criado em: {service.data_inicio}</p>
+                <p>Criado em: {service.criado_em}</p>
                 <p>Criado por: {service.criado_por}</p>
               </div>
             )}
@@ -396,7 +309,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 </DialogTrigger>
                 <DialogContent className="bg-[#4B5320] text-white">
                   <DialogHeader>
-                    <DialogTitle>Despesas do Serviço {service.id}</DialogTitle>
+                    <DialogTitle>Despesas do Serviço  {service.id}</DialogTitle>
                   </DialogHeader>
                   <ScrollArea className="h-[300px]">
                     {expenses.map((expense) => (
@@ -417,33 +330,25 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
     </div>
   )
 
+  const handleFilterChange = (field: keyof Service, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }))
+  }
+
   return (
     <div className="p-6 bg-[#556B2F] rounded-lg text-white">
       <div className="flex flex-col space-y-4 mb-6">
         <h2 className="text-2xl font-bold">Serviços:</h2>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-          <div className="w-full sm:w-auto flex items-center space-x-2">
-            <Input
-              placeholder="Pesquisar serviço..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64"
-            />
-          </div>
-        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
         {selectedServices.length > 0 && (
-          <>
-            <Button variant="destructive" onClick={handleDeleteSelected}>
-              Deletar Selecionados ({selectedServices.length})
-            </Button>
-          </>
+          <Button variant="destructive" onClick={handleDeleteSelected}>
+            Deletar Selecionados ({selectedServices.length})
+          </Button>
         )}
       </div>
 
-      <div className="max-md:hidden">
+      <div className="max-md:hidden overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -454,29 +359,210 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 />
               </TableHead>
               <TableHead className='text-white'>Ações</TableHead>
-              <TableHead className='text-white'>ID</TableHead>
-              <TableHead className='text-white'>Aeronave</TableHead>
-              <TableHead className='text-white'>Piloto</TableHead>
-              <TableHead className='text-white'>Confirmação de Pagamento da Área</TableHead>
-              <TableHead className='text-white'>Valor Total da Área</TableHead>
-              <TableHead className='text-white'>Data de Início</TableHead>
-              <TableHead className='text-white'>Data Final</TableHead>
-              <TableHead className='text-white'>Solicitante da Área</TableHead>
-              <TableHead className='text-white'>Nome da Área</TableHead>
-              <TableHead className='text-white'>Tamanho da Área (Hectares)</TableHead>
-              <TableHead className='text-white'>Tamanho da Área (Alqueires)</TableHead>
-              <TableHead className='text-white'>Tipo de Aplicação na Área</TableHead>
-              <TableHead className='text-white'>Quantidade no hopper por voo</TableHead>
-              <TableHead className='text-white'>Tipo de Vazão</TableHead>
-              <TableHead className='text-white'>Quantidade de Voos na Área</TableHead>
-              <TableHead className='text-white'>Valor por Alqueire</TableHead>
-              <TableHead className='text-white'>Valor por Hectare</TableHead>
-              <TableHead className='text-white'>Valor Médio por Hora de Voo</TableHead>
-              <TableHead className='text-white'>Tempo de Voo Gasto na Área</TableHead>
-              <TableHead className='text-white'>Lucro por Área</TableHead>
-              <TableHead className='text-white'>Percentual de Lucro Líquido por Área</TableHead>
-              <TableHead className='text-white'>Criado Em</TableHead>
-              <TableHead className='text-white'>Criado Por</TableHead>
+              <TableHead className='text-white'>
+                ID
+                <Input
+                  placeholder="Filtrar ID"
+                  value={filters.id || ''}
+                  onChange={(e) => handleFilterChange('id', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Aeronave
+                <Input
+                  placeholder="Filtrar Aeronave"
+                  value={filters.aeronave_data || ''}
+                  onChange={(e) => handleFilterChange('aeronave_data', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Piloto
+                <Input
+                  placeholder="Filtrar Piloto"
+                  value={filters.employee_data || ''}
+                  onChange={(e) => handleFilterChange('employee_data', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Confirmação de Pagamento
+                <Input
+                  placeholder="Filtrar Pagamento"
+                  value={filters.confirmacao_de_pagamento_da_area || ''}
+                  onChange={(e) => handleFilterChange('confirmacao_de_pagamento_da_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Solicitante
+                <Input
+                  placeholder="Filtrar Solicitante"
+                  value={filters.solicitante_da_area || ''}
+                  onChange={(e) => handleFilterChange('solicitante_da_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Nome da Área
+                <Input
+                  placeholder="Filtrar Nome da Área"
+                  value={filters.nome_da_area || ''}
+                  onChange={(e) => handleFilterChange('nome_da_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Tamanho (Hectares)
+                <Input
+                  placeholder="Filtrar Hectares"
+                  value={filters.tamanho_area_hectares || ''}
+                  onChange={(e) => handleFilterChange('tamanho_area_hectares', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Tamanho (Alqueires)
+                <Input
+                  placeholder="Filtrar Alqueires"
+                  value={filters.tamanho_area_alqueires || ''}
+                  onChange={(e) => handleFilterChange('tamanho_area_alqueires', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Tipo de Aplicação
+                <Input
+                  placeholder="Filtrar Tipo de Aplicação"
+                  value={filters.tipo_aplicacao_na_area || ''}
+                  onChange={(e) => handleFilterChange('tipo_aplicacao_na_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Valor Total
+                <Input
+                  placeholder="Filtrar Valor"
+                  value={filters.valor_total_da_area || ''}
+                  onChange={(e) => handleFilterChange('valor_total_da_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Quantidade no Hopper
+                <Input
+                  placeholder="Filtrar Quantidade no Hopper"
+                  value={filters.quantidade_no_hopper_por_voo || ''}
+                  onChange={(e) => handleFilterChange('quantidade_no_hopper_por_voo', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Tipo de Vazão
+                <Input
+                  placeholder="Filtrar Tipo de Vazão"
+                  value={filters.tipo_de_vazao || ''}
+                  onChange={(e) => handleFilterChange('tipo_de_vazao', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Quantidade de Voos
+                <Input
+                  placeholder="Filtrar Quantidade de Voos"
+                  value={filters.quantidade_de_voos_na_area || ''}
+                  onChange={(e) => handleFilterChange('quantidade_de_voos_na_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Valor por Hectare
+                <Input
+                  placeholder="Filtrar Valor por Hectare"
+                  value={filters.valor_por_hectare || ''}
+                  onChange={(e) => handleFilterChange('valor_por_hectare', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Valor por Alqueire
+                <Input
+                  placeholder="Filtrar Valor por Alqueire"
+                  value={filters.valor_por_alqueire || ''}
+                  onChange={(e) => handleFilterChange('valor_por_alqueire', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+
+              <TableHead className='text-white'>
+                Valor Médio por Hora de Voo
+                <Input
+                  placeholder="Filtrar Valor Médio por Hora"
+                  value={filters.valor_medio_por_hora_de_voo || ''}
+                  onChange={(e) => handleFilterChange('valor_medio_por_hora_de_voo', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+
+
+
+              <TableHead className='text-white'>
+                Tempo de Voo
+                <Input
+                  placeholder="Filtrar Tempo de Voo"
+                  value={filters.tempo_de_voo_gasto_na_area || ''}
+                  onChange={(e) => handleFilterChange('tempo_de_voo_gasto_na_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+
+              <TableHead className='text-white'>
+                Data de Início
+                <Input
+                  placeholder="Filtrar Data Início"
+                  value={filters.data_inicio || ''}
+                  onChange={(e) => handleFilterChange('data_inicio', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Data Final
+                <Input
+                  placeholder="Filtrar Data Final"
+                  value={filters.data_final || ''}
+                  onChange={(e) => handleFilterChange('data_final', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+
+              <TableHead className='text-white'>
+                Lucro por Área
+                <Input
+                  placeholder="Filtrar Lucro por Área"
+                  value={filters.lucro_por_area || ''}
+                  onChange={(e) => handleFilterChange('lucro_por_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Percentual de Lucro Líquido
+                <Input
+                  placeholder="Filtrar Percentual de Lucro"
+                  value={filters.percentual_de_lucro_liquido_por_area || ''}
+                  onChange={(e) => handleFilterChange('percentual_de_lucro_liquido_por_area', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+              <TableHead className='text-white'>
+                Criado Por
+                <Input
+                  placeholder="Filtrar Criado Por"
+                  value={filters.criado_por || ''}
+                  onChange={(e) => handleFilterChange('criado_por', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -529,7 +615,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                             {expenses.map((expense) => (
                               parseInt(expense.service_id) === service.id && <TableRow key={expense.id}>
                                 <TableCell>{expense.id}</TableCell>
-                                <TableCell>{format(expense.data, 'dd/MMyyyy')}</TableCell>
+                                <TableCell>{format(new Date(expense.data), 'dd/MM/yyyy')}</TableCell>
                                 <TableCell>{expense.origem}</TableCell>
                                 <TableCell>{expense.porcentagem}%</TableCell>
                                 <TableCell>R$ {expense.valor}</TableCell>
@@ -542,27 +628,38 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                   </div>
                 </TableCell>
                 <TableCell>{service.id}</TableCell>
-                <TableCell>{service.aeronave_data}</TableCell>
-                <TableCell>{service.employee_data}</TableCell>
+                <TableCell>{renderEditableCell(service, 'aeronave_data')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'employee_data')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell>
-                <TableCell>{renderEditableCell(service, 'valor_total_da_area')}</TableCell>
-                <TableCell>{format(renderEditableCell(service, 'data_inicio'), 'dd/MM/yyyy')}</TableCell>
-                <TableCell>{renderEditableCell(service, 'data_final')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'solicitante_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'nome_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'tamanho_area_hectares')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'tamanho_area_alqueires')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'tipo_aplicacao_na_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'valor_total_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'quantidade_no_hopper_por_voo')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'tipo_de_vazao')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'quantidade_de_voos_na_area')}</TableCell>
-                <TableCell>{renderEditableCell(service, 'valor_por_alqueire')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'valor_por_hectare')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'valor_medio_por_hora_de_voo')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'tempo_de_voo_gasto_na_area')}</TableCell>
+                <TableCell>{renderEditableCell(service, 'valor_por_alqueire')}</TableCell>
+                <TableCell>{typeof new Date(renderEditableCell(service, 'data_inicio')) === typeof new Date() ? format(new Date(renderEditableCell(service, 'data_inicio')), 'dd/MM/yyyy') : '-'}</TableCell>
+                <TableCell>
+                  {(() => {
+                    const dateValue = renderEditableCell(service, 'data_final');
+                    const parsedDate = new Date(dateValue);
+
+                    // Verifica se a data é válida
+                    if (!isNaN(parsedDate)) {
+                      return format(parsedDate, 'dd/MM/yyyy');
+                    } else {
+                      return '-'; // Retorna '-' caso a data seja inválida
+                    }
+                  })()}
+                </TableCell>
                 <TableCell>{renderEditableCell(service, 'lucro_por_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'percentual_de_lucro_liquido_por_area')}</TableCell>
-                <TableCell>{service.data_inicio}</TableCell>
                 <TableCell>{service.criado_por}</TableCell>
               </TableRow>
             ))}
@@ -589,7 +686,41 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
           </Select>
         </div>
         <div className="flex flex-wrap justify-center gap-2">
-          {renderPaginationButtons()}
+          <Button
+            className='text-black'
+            variant="outline"
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            className='text-black'
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="flex items-center px-2">
+            Página {currentPage} de {Math.ceil(filteredServices.length / itemsPerPage)}
+          </span>
+          <Button
+            className='text-black'
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredServices.length / itemsPerPage)))}
+            disabled={currentPage === Math.ceil(filteredServices.length / itemsPerPage)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            className='text-black'
+            variant="outline"
+            onClick={() => setCurrentPage(Math.ceil(filteredServices.length / itemsPerPage))}
+            disabled={currentPage === Math.ceil(filteredServices.length / itemsPerPage)}
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>

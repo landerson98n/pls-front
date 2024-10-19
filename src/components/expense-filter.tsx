@@ -63,8 +63,8 @@ type ExpenseFormData = z.infer<typeof schema>
 
 type Safra = {
   id: string;
-  startDate: string;
-  endDate: string;
+  dataInicio: string;
+  dataFinal: string;
   label: string;
 }
 

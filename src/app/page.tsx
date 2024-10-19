@@ -10,6 +10,7 @@ import { RegisterAircraft } from '@/components/register-aircraft'
 import { ServiceList } from '@/components/service-list'
 import { ExpenseList } from '@/components/expense-list'
 import { DashboardPage } from '@/components/dashboard'
+import { SafraManagement } from '@/components/safra-management'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -21,23 +22,22 @@ import { Login } from '@/components/login'
 
 type Safra = {
   id: string;
-  startDate: string;
-  endDate: string;
+  dataInicio: string;
+  dataFinal: string;
   label: string;
 }
 
 export default function Dashboard() {
   const [activeComponent, setActiveComponent] = useState('dashboard')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [selectedSafra, setSelectedSafra] = useState<Safra>({ id: '', startDate: '', endDate: '', label: '' })
+  const [selectedSafra, setSelectedSafra] = useState<Safra>({ id: '', dataInicio: '', dataFinal: '', label: '' })
   const [safras, setSafras] = useState<Safra[]>([])
+  const [loadSafra, setLoadSafra] = useState<Safra[]>([])
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<string | null>(null)
 
-
   const handleLogin = async (email: string, password: string) => {
     try {
-      // Chama a API de login
       const response = await axios.post('/api/login', { email, password })
 
       if (response.status === 200) {
@@ -61,7 +61,6 @@ export default function Dashboard() {
     }
   }
 
-
   const handleLogout = () => {
     setIsAuthenticated(false)
     setUser(null)
@@ -83,6 +82,8 @@ export default function Dashboard() {
         return <ExpenseList selectedSafra={selectedSafra} />
       case 'services':
         return <ServiceList selectedSafra={selectedSafra} />
+      case 'safras':
+        return <SafraManagement setLoadSafra={setLoadSafra}/>
       case 'dashboard':
       default:
         return <DashboardPage selectedSafra={selectedSafra} />
@@ -97,6 +98,7 @@ export default function Dashboard() {
     { name: 'Despesas', key: 'expenses' },
     { name: 'Funcionários', key: 'employees' },
     { name: 'Listar Despesas', key: 'list-expenses' },
+    { name: 'Gerenciar Safras', key: 'safras' },
   ]
 
   const NavLinks = ({ onClick = () => { } }) => (
@@ -119,26 +121,31 @@ export default function Dashboard() {
   )
 
   useEffect(() => {
-    const currentYear = new Date().getFullYear()
-    const defaultSafras: Safra[] = []
-    for (let year = 2023; year <= currentYear + 2; year++) {
-      defaultSafras.push({
-        id: `${year}`,
-        startDate: `${year}-01-01`,
-        endDate: `${year}-12-31`,
-        label: `Safra ${year}`
+    fetchSafras()
+  }, [loadSafra])
+
+  const fetchSafras = async () => {
+    try {
+      const response = await axios.get('/api/safras')
+      setSafras(response.data)
+      if (response.data.length > 0) {
+        setSelectedSafra(response.data[0])
+      }
+    } catch (error) {
+      console.error('Error fetching safras:', error)
+      toast({
+        title: "Erro ao carregar safras",
+        description: "Não foi possível carregar as safras. Por favor, tente novamente.",
+        variant: "destructive",
       })
     }
-    setSafras(defaultSafras)
-    setSelectedSafra(defaultSafras[0])
-  }, [])
+  }
 
   const handleSelectSafra = (id: string) => {
-    const safra = safras.find((item) => {
-      return item.id === id
-    })
-
-    setSelectedSafra(safra)
+    const safra = safras.find((item) => item.id === id)
+    if (safra) {
+      setSelectedSafra(safra)
+    }
   }
 
   if (!isAuthenticated) {
@@ -162,7 +169,7 @@ export default function Dashboard() {
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div className="max-w-7xl  mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <div className='w-full sm:w-[30%] flex items-center gap-2'>
               <Select value={selectedSafra.id} onValueChange={handleSelectSafra}>
                 <SelectTrigger className="w-full">
@@ -196,7 +203,7 @@ export default function Dashboard() {
                   <nav className="mt-6 text-white">
                     <NavLinks onClick={() => setIsMobileMenuOpen(false)} />
                     <div className="mt-4 px-4">
-                      <span className="block text-sm mb-2">{user}</span>
+                      <span className="block text-sm mb-2">{user.name}</span>
                       <Button variant="outline" onClick={handleLogout} className="w-full">
                         Sair
                       </Button>

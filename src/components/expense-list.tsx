@@ -38,8 +38,8 @@ const expenseTypes = [
 
 type Safra = {
   id: string;
-  startDate: string;
-  endDate: string;
+  dataInicio: string;
+  dataFinal: string;
   label: string;
 }
 
@@ -63,6 +63,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [filters, setFilters] = useState<{ [key in keyof Expense]?: string }>({})
 
   const fetchData = async () => {
     try {
@@ -70,9 +71,6 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
       const expensesCommission = await axios.get('/api/comissions');
       const expensesVehicle = await axios.get('/api/expenses_vehicles');
       const expensesSpecific = await axios.get('/api/expenses_specific');
-
-      console.log(expensesCommission.data);
-
       setExpenses({
         specific: expensesSpecific.data,
         vehicle: expensesVehicle.data,
@@ -93,8 +91,8 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
       return null
     }
     const expenseDate = new Date(expense.data)
-    const safraStartDate = selectedSafra ? new Date(selectedSafra.startDate) : null
-    const safraEndDate = selectedSafra ? new Date(selectedSafra.endDate) : null
+    const safraStartDate = selectedSafra ? new Date(selectedSafra.dataInicio) : null
+    const safraEndDate = selectedSafra ? new Date(selectedSafra.dataFinal) : null
 
     const isWithinSafraDates = !selectedSafra ||
       (expenseDate >= safraStartDate && expenseDate <= safraEndDate)
@@ -106,7 +104,11 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
       expense.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.origem.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense?.confirmação_de_pagamento && expense?.confirmação_de_pagamento.toLowerCase().includes(searchTerm.toLowerCase())
-    return isWithinSafraDates && matchesSearch
+    return isWithinSafraDates && matchesSearch && Object.entries(filters).every(([key, value]) => {
+      if (!value) return true
+      const serviceValue = expense[key as keyof Expense]?.toString()
+      return typeof serviceValue === 'string' && serviceValue.toLowerCase().includes(value.toLowerCase())
+    })
   })
 
   // Pagination
@@ -224,9 +226,9 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
   const handleBulkUpdate = async (field: string, value: string) => {
     try {
       const response = await axios.put('/api/expenses/bulk-update', {
-        ids: selectedExpenses, 
-        field: 'confirma__o_de_pagamento',             
-        value                  
+        ids: selectedExpenses,
+        field: 'confirma__o_de_pagamento',
+        value
       });
 
       if (response.status === 200) {
@@ -377,169 +379,266 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
     return buttons
   }
 
+  const handleFilterChange = (field: keyof Service, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }))
+  }
+
   const renderDesktopTable = (expenses: Expense[]) => (
-    expenses && <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[50px] text-white">
-            <Checkbox
-              checked={selectedExpenses.length === expenses?.length}
-              onCheckedChange={handleSelectAll}
-            />
-          </TableHead>
-          <TableHead className="w-[100px] text-white">Ações</TableHead>
-          <TableHead className='text-white'>ID</TableHead>
-          {activeTab !== 'commission' && <TableHead className='text-white'>Aeronave</TableHead>}
-          {activeTab === 'commission' && (
-            <>
-              <TableHead className='text-white'>Nome</TableHead>
-              <TableHead className='text-white'>Serviço</TableHead>
-              <TableHead className='text-white'>Porcentagem</TableHead>
-            </>
-          )}
-          <TableHead className='text-white'>Data</TableHead>
-          <TableHead className='text-white'>Origem</TableHead>
-          {activeTab !== 'commission' && activeTab !== 'specific' && <TableHead className='text-white'>Tipo</TableHead>}
-          <TableHead className='text-white'>Descrição</TableHead>
-          <TableHead className='text-white'>Valor</TableHead>
-          <TableHead className='text-white'>Pagamento</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {expenses?.map((expense) => (
-          <TableRow key={expense.id}>
-            <TableCell>
+    expenses && (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[50px] text-white">
               <Checkbox
-                checked={selectedExpenses.includes(expense.id)}
-                onCheckedChange={() => handleSelectExpense(expense.id)}
+                checked={selectedExpenses.length === expenses?.length}
+                onCheckedChange={handleSelectAll}
               />
-            </TableCell>
-            <TableCell>
-              <div className="flex space-x-2 max-md:hidden">
-                {editingId === expense.id ? (
-                  <>
-                    <Button variant="outline" size="icon" onClick={handleSaveEdit}>
-                      <Save className="h-4 w-4 text-[#4B5320]" />
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={handleCancelEdit}>
-                      <X className="h-4 w-4 text-[#4B5320]" />
-                    </Button>
-                  </>
-                ) : (
-                  <Button variant="outline" size="icon" onClick={() => handleEdit(expense)}>
-                    <Edit className="h-4 w-4 text-[#4B5320]" />
-                  </Button>
-                )}
-                <Button variant="outline" size="icon" onClick={() => handleDelete(expense.id)}>
-                  <Trash2 className="h-4 w-4 text-[#4B5320]" />
-                </Button>
-              </div>
-            </TableCell>
-            <TableCell>{expense.id}</TableCell>
+            </TableHead>
+            <TableHead className="w-[100px] text-white">Ações</TableHead>
+            <TableHead className='text-white'>
+              ID
+              <Input
+                placeholder="Filtrar ID"
+                value={filters.id || ''}
+                onChange={(e) => handleFilterChange('id', e.target.value)}
+                className="mt-1 w-30"
+              />
+            </TableHead>
             {activeTab !== 'commission' && (
-              <TableCell>
-                {expense.aircraft_name}
-              </TableCell>
+              <TableHead className='text-white'>
+                Aeronave
+                <Input
+                  placeholder="Filtrar Aeronave"
+                  value={filters.aircraft_name || ''}
+                  onChange={(e) => handleFilterChange('aircraft_name', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
             )}
             {activeTab === 'commission' && (
               <>
-                <TableCell>
-                  {expense.employee_name}
-                </TableCell>
-                <TableCell>
-                  {expense.service_name}
-                </TableCell>
-                <TableCell>
-                  {editingId === expense.id ? (
-                    <Input
-                      name="porcentagem"
-                      type="number"
-                      value={editingExpense?.porcentagem || ''}
-                      onChange={handleEditInputChange}
-                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                    />
-                  ) : (
-                    `${expense.porcentagem}%`
-                  )}
-                </TableCell>
+                <TableHead className='text-white'>
+                  Nome
+                  <Input
+                    placeholder="Filtrar Nome"
+                    value={filters.employee_name || ''}
+                    onChange={(e) => handleFilterChange('employee_name', e.target.value)}
+                    className="mt-1 w-30"
+                  />
+                </TableHead>
+                <TableHead className='text-white'>
+                  Serviço
+                  <Input
+                    placeholder="Filtrar Serviço"
+                    value={filters.service_name || ''}
+                    onChange={(e) => handleFilterChange('service_name', e.target.value)}
+                    className="mt-1 w-30"
+                  />
+                </TableHead>
+                <TableHead className='text-white'>
+                  Porcentagem
+                  <Input
+                    placeholder="Filtrar Porcentagem"
+                    value={filters.porcentagem || ''}
+                    onChange={(e) => handleFilterChange('porcentagem', e.target.value)}
+                    className="mt-1 w-30"
+                  />
+                </TableHead>
               </>
             )}
-            <TableCell>
-              {editingId === expense.id ? (
-                <Input
-                  name="data"
-                  value={editingExpense?.data || ''}
-                  onChange={handleEditInputChange}
-                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                />
-              ) : (
-                format(expense.data, "dd-MM-yyyy")
-              )}
-            </TableCell>
-            <TableCell>{expense.origem}</TableCell>
+            <TableHead className='text-white'>
+              Data
+              <Input
+                placeholder="Filtrar Data"
+                value={filters.data || ''}
+                onChange={(e) => handleFilterChange('data', e.target.value)}
+                className="mt-1 w-30"
+              />
+            </TableHead>
+            <TableHead className='text-white'>
+              Origem
+              <Input
+                placeholder="Filtrar Origem"
+                value={filters.origem || ''}
+                onChange={(e) => handleFilterChange('origem', e.target.value)}
+                className="mt-1 w-30"
+              />
+            </TableHead>
             {activeTab !== 'commission' && activeTab !== 'specific' && (
+              <TableHead className='text-white'>
+                Tipo
+                <Input
+                  placeholder="Filtrar Tipo"
+                  value={filters.tipo || ''}
+                  onChange={(e) => handleFilterChange('tipo', e.target.value)}
+                  className="mt-1 w-30"
+                />
+              </TableHead>
+            )}
+            <TableHead className='text-white'>
+              Descrição
+              <Input
+                placeholder="Filtrar Descrição"
+                value={filters.descricao || ''}
+                onChange={(e) => handleFilterChange('descricao', e.target.value)}
+                className="mt-1 w-30"
+              />
+            </TableHead>
+            <TableHead className='text-white'>
+              Valor
+              <Input
+                placeholder="Filtrar Valor"
+                value={filters.valor || ''}
+                onChange={(e) => handleFilterChange('valor', e.target.value)}
+                className="mt-1 w-30"
+              />
+            </TableHead>
+            <TableHead className='text-white'>
+              Pagamento
+              <Input
+                placeholder="Filtrar Pagamento"
+                value={filters.confirmação_de_pagamento || ''}
+                onChange={(e) => handleFilterChange('confirmação_de_pagamento', e.target.value)}
+                className="mt-1 w-30"
+              />
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {expenses?.map((expense) => (
+            <TableRow key={expense.id}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedExpenses.includes(expense.id)}
+                  onCheckedChange={() => handleSelectExpense(expense.id)}
+                />
+              </TableCell>
+              <TableCell>
+                <div className="flex space-x-2 max-md:hidden">
+                  {editingId === expense.id ? (
+                    <>
+                      <Button variant="outline" size="icon" onClick={handleSaveEdit}>
+                        <Save className="h-4 w-4 text-[#4B5320]" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={handleCancelEdit}>
+                        <X className="h-4 w-4 text-[#4B5320]" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="outline" size="icon" onClick={() => handleEdit(expense)}>
+                      <Edit className="h-4 w-4 text-[#4B5320]" />
+                    </Button>
+                  )}
+                  <Button variant="outline" size="icon" onClick={() => handleDelete(expense.id)}>
+                    <Trash2 className="h-4 w-4 text-[#4B5320]" />
+                  </Button>
+                </div>
+              </TableCell>
+              <TableCell>{expense.id}</TableCell>
+              {activeTab !== 'commission' && (
+                <TableCell>
+                  {expense.aircraft_name}
+                </TableCell>
+              )}
+              {activeTab === 'commission' && (
+                <>
+                  <TableCell>
+                    {expense.employee_name}
+                  </TableCell>
+                  <TableCell>
+                    {expense.service_name}
+                  </TableCell>
+                  <TableCell>
+                    {editingId === expense.id ? (
+                      <Input
+                        name="porcentagem"
+                        type="number"
+                        value={editingExpense?.porcentagem || ''}
+                        onChange={handleEditInputChange}
+                        className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                      />
+                    ) : (
+                      `${expense.porcentagem}%`
+                    )}
+                  </TableCell>
+                </>
+              )}
               <TableCell>
                 {editingId === expense.id ? (
                   <Input
-                    name="tipo"
-                    value={editingExpense?.tipo || ''}
+                    name="data"
+                    value={editingExpense?.data || ''}
                     onChange={handleEditInputChange}
                     className="bg-[#556B2F] text-white border-[#8FBC8F]"
                   />
                 ) : (
-                  expense.tipo
+                  format(expense.data, "dd-MM-yyyy")
                 )}
-
               </TableCell>
-            )}
-            <TableCell>
-              {editingId === expense.id ? (
-                <Input
-                  name="descricao"
-                  value={editingExpense?.descricao || ''}
-                  onChange={handleEditInputChange}
-                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                />
-              ) : (
-                expense.descricao
+              <TableCell>{expense.origem}</TableCell>
+              {activeTab !== 'commission' && activeTab !== 'specific' && (
+                <TableCell>
+                  {editingId === expense.id ? (
+                    <Input
+                      name="tipo"
+                      value={editingExpense?.tipo || ''}
+                      onChange={handleEditInputChange}
+                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                    />
+                  ) : (
+                    expense.tipo
+                  )}
+                </TableCell>
               )}
-            </TableCell>
-            <TableCell>
-              {editingId === expense.id ? (
-                <Input
-                  name="valor"
-                  type="number"
-                  value={editingExpense?.valor || ''}
-                  onChange={handleEditInputChange}
-                  className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                />
-              ) : (
-                `R$ ${expense.valor}`
-              )}
-            </TableCell>
-            <TableCell>
-              {editingId === expense.id ? (
-                <Select
-                  name="confirmação_de_pagamento"
-                  value={editingExpense?.confirmação_de_pagamento || ''}
-                  onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, confirmação_de_pagamento: value } : null)}
-                >
-                  <SelectTrigger className="bg-[#556B2F] text-white border-[#8FBC8F]">
-                    <SelectValue placeholder="Status de pagamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pago">Pago</SelectItem>
-                    <SelectItem value="Pendente">Pendente</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                expense.confirmação_de_pagamento
-              )}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+              <TableCell>
+                {editingId === expense.id ? (
+                  <Input
+                    name="descricao"
+                    value={editingExpense?.descricao || ''}
+                    onChange={handleEditInputChange}
+                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                  />
+                ) : (
+                  expense.descricao
+                )}
+              </TableCell>
+              <TableCell>
+                {editingId === expense.id ? (
+                  <Input
+                    name="valor"
+                    type="number"
+                    value={editingExpense?.valor || ''}
+                    onChange={handleEditInputChange}
+                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                  />
+                ) : (
+                  `R$ ${expense.valor}`
+                )}
+              </TableCell>
+              <TableCell>
+                {editingId === expense.id ? (
+                  <Select
+                    name="confirmação_de_pagamento"
+                    value={editingExpense?.confirmação_de_pagamento || ''}
+                    onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, confirmação_de_pagamento: value } : null)}
+                  >
+                    <SelectTrigger className="bg-[#556B2F] text-white border-[#8FBC8F]">
+                      <SelectValue placeholder="Status de pagamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pago">Pago</SelectItem>
+                      <SelectItem value="Pendente">Pendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  expense.confirmação_de_pagamento
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    )
   )
 
   return (

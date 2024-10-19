@@ -42,8 +42,8 @@ type ServiceFormData = z.infer<typeof serviceSchema>
 
 type Safra = {
   id: string;
-  startDate: string;
-  endDate: string;
+  dataInicio: string;
+  dataFinal: string;
   label: string;
 }
 

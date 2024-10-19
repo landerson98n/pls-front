@@ -3,56 +3,100 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line } from 'recharts'
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { format } from 'date-fns'
 import axios from 'axios'
 
 type Safra = {
   id: string;
-  startDate: string;
-  endDate: string;
+  dataInicio: string;
+  dataFinal: string;
   label: string;
 }
 
+type Expense = {
+  id: number
+  data: string
+  origem: string
+  tipo?: string
+  descricao?: string
+  valor: number
+  confirmação_de_pagamento: string
+  aircraft_name?: string
+  porcentagem?: number
+  employee_name?: string
+  service_name?: string
+  harvest: string
+  aircraft_id: string
+  employee_id: string
+}
+
 export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
-  const [startDate, setStartDate] = useState<Date>()
-  const [endDate, setEndDate] = useState<Date>()
+  const [dataInicio, setStartDate] = useState<Date>()
+  const [dataFinal, setEndDate] = useState<Date>()
   const [selectedAircraft, setSelectedAircraft] = useState("")
   const [selectedAircraftId, setSelectedAircraftId] = useState("")
   const [selectedEmployee, setSelectedEmployee] = useState("")
-  const [aircraftReport, setAircraftReport] = useState<any>(null)
+  const [aircraftReport, setAircraftReport] = useState({
+    nome_aeronave: "Nenhuma aeronave selecionada.",
+    total_de_area_aplicada_em_hectares: 0,
+    total_de_area_aplicada_em_alqueires: 0,
+    valor_total_bruto_recebido: 0,
+    valor_medio_de_hectares_total: 0,
+    valor_medio_de_alqueires_total: 0,
+    total_de_horas_voadas: 0,
+    valor_medio_por_hora_de_voo_total: 0,
+    lucro_total: 0,
+    total_gasto_combustivel: 0,
+    total_gasto_oleo: 0,
+    comissoes_de_pilotos: 0,
+    comissoes_de_badeco: 0,
+    restante_das_despesas: 0,
+    despesas_de_veiculo: 0,
+    despesas_de_especificas: 0,
+  })
   const [revenueData, setRevenueData] = useState<any[]>([])
   const [profitData, setProfitData] = useState<any[]>([])
   const [balanceData, setBalanceData] = useState<any>(null)
   const [expensesData, setExpensesData] = useState<any[]>([])
   const [aircrafts, setAircrafts] = useState<any[]>()
   const [employees, setEmployees] = useState<any[]>()
+  const [valorSpecific, setValorSpecific] = useState(0)
+  const [expenses, setExpenses] = useState<Record<string, Expense[]>>({
+    aircraft: [],
+    commission: [],
+    vehicle: [],
+    specific: [],
+  })
 
   useEffect(() => {
     fetchData()
-  }, [startDate, endDate, selectedEmployee])
+  }, [dataInicio, dataFinal, selectedEmployee])
 
   useEffect(() => {
-    setStartDate(selectedSafra.startDate)
-    setEndDate(selectedSafra.endDate)
+    setStartDate(selectedSafra.dataInicio)
+    setEndDate(selectedSafra.dataFinal)
   }, [selectedSafra])
 
   useEffect(() => {
     fetchDataSpecific()
-  }, [selectedAircraftId, selectedEmployee, startDate, endDate])
+  }, [selectedAircraftId, selectedEmployee, dataInicio, dataFinal])
 
   const fetchDataSpecific = async () => {
-    const startDateStr = startDate && format(startDate, 'dd_MM_yyyy');
-    const endDateStr = endDate && format(endDate, 'dd_MM_yyyy');
+    const startDateStr = dataInicio && format(dataInicio, 'dd_MM_yyyy');
+    const endDateStr = dataFinal && format(dataFinal, 'dd_MM_yyyy');
 
     if (selectedAircraftId) {
+      const balanceRes = await axios.get(`/api/gerar_balanco/${startDateStr}/${endDateStr}/${selectedAircraftId}`)
       const aircraftReportRes = await axios.get(`/api/gerar_relatorio_da_aeronave/${startDateStr}/${endDateStr}/${selectedAircraftId}/`)
       setAircraftReport(aircraftReportRes.data)
-
+      setBalanceData(balanceRes.data)
     }
 
     if (selectedEmployee && selectedAircraftId) {
       const expensesRes = await axios.get(`/api/despesas_por_categoria_especifica/${startDateStr}/${endDateStr}/${selectedEmployee}/${selectedAircraftId}/`)
+      const valorTotalSpecific = expensesRes.data.reduce((acc, item) => acc + item.value, 0)
+      setValorSpecific(valorTotalSpecific)
       setExpensesData(expensesRes.data)
     }
   }
@@ -60,13 +104,12 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
 
   const fetchData = async () => {
     try {
-      const startDateStr = format(startDate, 'dd_MM_yyyy');
-      const endDateStr = format(endDate, 'dd_MM_yyyy');
+      const startDateStr = format(dataInicio, 'dd_MM_yyyy');
+      const endDateStr = format(dataFinal, 'dd_MM_yyyy');
 
-      const [revenueRes, profitRes, balanceRes, aircrafts, employees] = await Promise.all([
+      const [revenueRes, profitRes, aircrafts, employees] = await Promise.all([
         axios.get(`/api/receita_por_aeronave/${startDateStr}/${endDateStr}/`),
         axios.get(`/api/lucro_por_aeronave/${startDateStr}/${endDateStr}/`),
-        axios.get(`/api/gerar_balanco/${startDateStr}/${endDateStr}/`),
         axios.get(`/api/aircraft/`),
         axios.get(`/api/employees/`)
       ])
@@ -74,10 +117,31 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
       setEmployees(employees.data)
       setRevenueData(revenueRes.data)
       setProfitData(profitRes.data)
-      setBalanceData(balanceRes.data)
       setAircrafts(aircrafts.data)
 
 
+      const expensesAircraft = await axios.get(`/api/expenses_aircraft/`);
+      const expensesCommission = await axios.get(`/api/comissions/`);
+      const expensesVehicle = await axios.get(`/api/expenses_vehicles/`);
+      const expensesSpecific = await axios.get(`/api/expenses_specific/`);
+
+      const safraStartDate = new Date(dataInicio)
+      const safraEndDate = new Date(dataFinal)
+
+      setExpenses({
+        specific: expensesSpecific.data.filter((item) => {
+          return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate
+        }),
+        vehicle: expensesVehicle.data.filter((item) => {
+          return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate
+        }),
+        commission: expensesCommission.data.filter((item) => {
+          return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate
+        }),
+        aircraft: expensesAircraft.data.filter((item) => {
+          return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate
+        }),
+      });
     } catch (error) {
       console.error("Error fetching data:", error)
     }
@@ -97,7 +161,7 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
       return (
         <div className="bg-[#4B5320] p-2 rounded shadow-md">
           <p className="text-white">{`Data: ${label}`}</p>
-          <p className="text-white">{`Valor: R$ ${payload[0].value.toFixed(2)}`}</p>
+          <p className="text-white">{`Valor: R$ ${Number(payload[0].value).toFixed(2)}`}</p>
         </div>
       )
     }
@@ -118,10 +182,83 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   }
 
-  const formattedData = revenueData.map(item => ({
-    ...item,
-    total_valor_total_da_area: Number(item.total_valor_total_da_area)
-  }))
+  const filteredExpenses = useMemo(() => {
+    const aircraft = expenses['aircraft'].filter(e => !selectedAircraftId || e.aircraft_id === selectedAircraftId)
+    const commission = expenses['commission'].filter(e => !selectedAircraftId || e.aircraft_id === selectedAircraftId)
+    const vehicle = expenses['vehicle'].filter(e => !selectedAircraftId || e.aircraft_id === selectedAircraftId)
+    const specific = expenses['specific'].filter(e => !selectedAircraftId || e.aircraft_id === selectedAircraftId)
+    return {
+      Aeronave: aircraft,
+      Comissão: commission,
+      Veículo: vehicle,
+      Específico: specific,
+      Total: [...aircraft, ...commission, ...vehicle, ...specific]
+    }
+  }, [expenses, selectedAircraft])
+
+  const filteredExpensesTotal = useMemo(() => {
+    const aircraft = expenses['aircraft']
+    const commission = expenses['commission']
+    const vehicle = expenses['vehicle']
+    const specific = expenses['specific']
+    return {
+      Aeronave: aircraft,
+      Comissão: commission,
+      Veículo: vehicle,
+      Específico: specific,
+      Total: [...aircraft, ...commission, ...vehicle, ...specific]
+    }
+  }, [expenses])
+
+  const filteredExpensesPiloto = useMemo(() => {
+    let data = {};
+
+    expenses['commission'].forEach((item) => {
+      if (data[item.employee_id]) {
+        data[item.employee_id].push(item);
+      } else {
+        data[item.employee_id] = [item];
+      }
+    });
+
+    return data;
+
+  }, [expenses])
+
+  const expensesByType = useMemo(() => {
+    return Object.entries(filteredExpenses).map(([type, expenses]) => {
+      return {
+        name: type,
+        value: expenses.reduce((sum, expense) => sum + Number(expense.valor), 0)
+      }
+    })
+  }, [filteredExpenses])
+
+  const expensesByTypeTotal = useMemo(() => {
+    return Object.entries(filteredExpensesTotal).map(([type, expenses]) => {
+      return {
+        name: type,
+        value: expenses.reduce((sum, expense) => sum + Number(expense.valor), 0)
+      }
+    })
+  }, [filteredExpensesTotal])
+
+
+  const getEmployeeNameById = (id) => {
+    const employee = employees?.find(emp => emp.id === Number(id));
+    return employee ? employee.name : 'Desconhecido';
+  };
+
+  const expensesByTypePiloto = useMemo(() => {
+    return Object.entries(filteredExpensesPiloto).map(([type, expenses]) => {
+      return {
+        name: getEmployeeNameById(type),
+        value: expenses.reduce((sum, expense) => sum + Number(expense.valor), 0)
+      }
+    })
+  }, [filteredExpensesPiloto])
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
 
   return (
     <div className="p-6 bg-[#4B5320] rounded-lg shadow text-white">
@@ -156,7 +293,7 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
         {expensesData.length > 0 && (
           <Card className="bg-[#556B2F]">
             <CardHeader>
-              <CardTitle className='text-white'>Despesas Detalhadas</CardTitle>
+              <CardTitle className='text-white'>Despesas Detalhadas - Total:R$ {valorSpecific.toLocaleString()}</CardTitle>
             </CardHeader>
             <CardContent className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -190,28 +327,12 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
           </Card>
         )}
 
-        {aircraftReport && (
-          <Card className="bg-[#556B2F]">
-            <CardHeader>
-              <CardTitle className='text-white'>Relatório da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
-            </CardHeader>
-            <CardContent className='text-white'>
-              <p>Área Total Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
-              <p>Área Total Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
-              <p>Valor Total Bruto: R$ {Number(aircraftReport.valor_total_bruto_recebido).toLocaleString()}</p>
-              <p>Lucro Total: R$ {Number(aircraftReport.lucro_total).toLocaleString()}</p>
-              <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
-              <p>Valor Médio por Hora de Voo: R$ {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="bg-[#556B2F]">
+        {aircraftReport.nome_aeronave !== 'Nenhuma aeronave selecionada.' && <Card className="bg-[#556B2F]">
           <CardHeader>
-            <CardTitle className='text-white'>Resumo Financeiro</CardTitle>
+            <CardTitle className='text-white'>Despesas Gerais da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
           </CardHeader>
           <CardContent className='text-white'>
-            {balanceData && (
+            {balanceData && aircraftReport && (
               <>
                 <p>Receita Total: R$ {Number(balanceData.total_valor_area).toLocaleString()}</p>
                 <p>Despesas Totais: R$ {Number(balanceData.total_despesas).toLocaleString()}</p>
@@ -221,75 +342,108 @@ export function DashboardPage({ selectedSafra }: { selectedSafra: Safra }) {
               </>
             )}
           </CardContent>
-        </Card>
+        </Card>}
+
+        {aircraftReport && (
+          <Card className="bg-[#556B2F]">
+            <CardHeader>
+              <CardTitle className='text-white'>Relatório da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
+            </CardHeader>
+            <CardContent className='text-white'>
+              <p>Área Total Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
+              <p>Área Total Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
+              <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
+              <p>Valor médio por alqueires: {aircraftReport.valor_medio_de_alqueires_total}</p>
+              <p>Valor médio por hectares: {aircraftReport.valor_medio_de_hectares_total}</p>
+              <p>Valor Médio por Hora de Voo: R$ {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
+              <p>Valor Total Bruto: R$ {Number(aircraftReport.valor_total_bruto_recebido).toLocaleString()}</p>
+              <p>Comissões de Pilotos: {aircraftReport.comissoes_de_pilotos}</p>
+              <p>Comissões de Auxiliar de pista: {aircraftReport.comissoes_de_badeco}</p>
+
+              <p>Despesa Total: R$ {
+                (Number(aircraftReport.valor_total_bruto_recebido) -
+                  Number(aircraftReport.lucro_total)).toLocaleString()
+              }</p>
+              <p>Lucro Total: R$ {Number(aircraftReport.lucro_total).toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        )}
+
 
         <Card className="bg-[#556B2F]">
           <CardHeader>
-            <CardTitle className='text-white'>Receita por Aeronave</CardTitle>
+            <CardTitle className='text-white'>Despesas por Categoria - Avião: {aircraftReport.nome_aeronave}</CardTitle>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          {aircraftReport.nome_aeronave !== 'Nenhuma aeronave selecionada.' && <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={formattedData}>
-                <XAxis
-                  dataKey="aircraft_name"
-                  tick={{ fill: 'white' }}
-                />
-                <YAxis
-                  tick={{ fill: 'white' }}
-                  tickFormatter={formatYAxis}
-                />
+              <BarChart data={expensesByType}>
+                <XAxis dataKey="name" stroke="white" />
+                <YAxis stroke="white" tickFormatter={formatYAxis} />
                 <Tooltip
-                  formatter={(value: number) => [formatTooltipValue(value), "Receita"]}
-                  labelStyle={{ color: 'black' }}
+                  formatter={(value) => formatTooltipValue(Number(value))}
                   contentStyle={{ backgroundColor: '#4B5320', border: 'none' }}
-                />
-                <Legend
-                  wrapperStyle={{ color: 'white' }}
-                />
-                <Bar
-                  dataKey="total_valor_total_da_area"
-                  fill="#82ca9d"
-                  name="Receita"
-                  label={{
-                    position: 'top',
-                    fill: 'white',
-                    formatter: (value: number) => formatTooltipValue(value)
-                  }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#556B2F]">
-          <CardHeader>
-            <CardTitle className='text-white'>Lucro por Aeronave</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={profitData}>
-                <XAxis dataKey="aircraft_name" tick={{ fill: 'white' }} />
-                <YAxis tick={{ fill: 'white' }} tickFormatter={formatYAxis} />
-                <Tooltip
-                  formatter={(value: number) => [formatTooltipValue(value), "Lucro"]}
                   labelStyle={{ color: 'white' }}
+                />
+                <Bar dataKey="value" fill="#8884d8">
+                  {expensesByType.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>}
+        </Card>
+
+        <Card className="bg-[#556B2F]">
+          <CardHeader>
+            <CardTitle className='text-white'>Total de Comissão Por Piloto</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={expensesByTypePiloto}>
+                <XAxis dataKey="name" stroke="white" />
+                <YAxis stroke="white" tickFormatter={formatYAxis} />
+                <Tooltip
+                  formatter={(value) => formatTooltipValue(Number(value))}
                   contentStyle={{ backgroundColor: '#4B5320', border: 'none' }}
+                  labelStyle={{ color: 'white' }}
                 />
-                <Legend />
-                <Bar
-                  dataKey="lucro_por_area"
-                  fill="#8884d8"
-                  name="Lucro"
-                  label={{
-                    position: 'top',
-                    fill: 'white',
-                    formatter: (value: number) => formatTooltipValue(value)
-                  }}
-                />
+                <Bar dataKey="value" fill="#8884d8">
+                  {expensesByType.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
+
+
+
+        <Card className="bg-[#556B2F]">
+          <CardHeader>
+            <CardTitle className='text-white'>Despesas por Categoria - TOTAL</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={expensesByTypeTotal}>
+                <XAxis dataKey="name" stroke="white" />
+                <YAxis stroke="white" tickFormatter={formatYAxis} />
+                <Tooltip
+                  formatter={(value) => formatTooltipValue(Number(value))}
+                  contentStyle={{ backgroundColor: '#4B5320', border: 'none' }}
+                  labelStyle={{ color: 'white' }}
+                />
+                <Bar dataKey="value" fill="#8884d8">
+                  {expensesByType.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   )

@@ -6,14 +6,15 @@ export async function GET() {
 
     const expensesData = expenses.map(expense => ({
         id: expense.id,
-        data: expense.data, // Formatação da data
+        data: expense.data,
         origem: expense.origem,
         tipo: expense.tipo,
         descricao: expense.descricao,
         porcentagem: expense.porcentagem,
         valor: expense.valor,
         service_id: expense.service_id,
-
+        aircraft_id: expense.aircraft_id,
+        employee_id: expense.employee_id
     }));
 
     return NextResponse.json(expensesData);

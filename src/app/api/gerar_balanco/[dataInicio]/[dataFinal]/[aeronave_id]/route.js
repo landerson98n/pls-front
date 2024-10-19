@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
-    const { dataInicio, dataFinal } = params;
+    const { dataInicio, dataFinal, aeronave_id } = params;
     console.log(params);
 
     try {
@@ -18,6 +18,7 @@ export async function GET(request, { params }) {
                     gte: startDate,
                     lte: endDate,
                 },
+                aeronave_id: Number(aeronave_id)
             },
         });
 
@@ -31,6 +32,7 @@ export async function GET(request, { params }) {
                     gte: startDate,
                     lte: endDate,
                 },
+                aircraft_id: Number(aeronave_id)
             },
         });
 
@@ -44,6 +46,7 @@ export async function GET(request, { params }) {
                     gte: startDate,
                     lte: endDate,
                 },
+                aircraft_id: Number(aeronave_id)
             },
         });
 
@@ -57,6 +60,7 @@ export async function GET(request, { params }) {
                     gte: startDate,
                     lte: endDate,
                 },
+                aircraft_id: Number(aeronave_id)
             },
         });
 
@@ -70,6 +74,8 @@ export async function GET(request, { params }) {
             total_oleo_gasto: total_de_oleo._sum.valor,
         });
     } catch (error) {
+        console.log(error);
+        
         return NextResponse.json({ error: `Formato de data inválido. Use o formato dd_mm_aaaa. ${error}` }, { status: 400 });
     }
 }
