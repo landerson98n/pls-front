@@ -26,16 +26,25 @@ const serviceSchema = z.object({
   tamanho_area_hectares: z.number().positive('Tamanho da área deve ser positivo'),
   tipo_aplicacao_na_area: z.string().nonempty('Tipo de aplicação é obrigatório'),
   quantidade_no_hopper_por_voo: z.number().positive('Quantidade no hopper deve ser positiva'),
-  tipo_de_vazao: z.string().nonempty('Tipo de vazão é obrigatório'),
+  tipo_de_vazao: z.number().positive('Tipo de vazão é obrigatório'),
   quantidade_de_voos_na_area: z.number().int().positive('Quantidade de voos deve ser um número inteiro positivo'),
   valor_total_da_area: z.number().positive('Valor total da área deve ser positivo'),
   confirmacao_de_pagamento_da_area: z.string().nonempty('Confirmação de pagamento é obrigatória'),
-  tempo_de_voo_gasto_na_area: z.string().nonempty('Tempo de vôo necessário'),
+  tempo_de_voo_gasto_na_area: z.number().positive('Tamanho da área deve ser positivo'),
   aeronave_id: z.string().nonempty('Aeronave é obrigatória'),
   employee_id: z.string().nonempty('Piloto é obrigatório'),
   confirmacao_de_pagamento_do_piloto: z.enum(['Em aberto', 'Pago'], {
     errorMap: () => ({ message: 'Confirmação de pagamento do piloto é obrigatória' }),
-  })
+  }),
+  valor_por_hectare: z.number().positive('Tamanho da área deve ser positivo'),
+  valor_por_alqueire: z.number().positive('Tamanho da área deve ser positivo'),
+  comissao_piloto: z.number().positive('Tamanho da área deve ser positivo'),
+  porcentagem_comissao: z.number().positive('Tamanho da área deve ser positivo'),
+  tamanho_area_alqueires: z.number().positive('Tamanho da área deve ser positivo'),
+  valor_medio_por_hora_de_voo: z.number().positive('Tamanho da área deve ser positivo'),
+  lucro_por_area: z.number().positive('Tamanho da área deve ser positivo'),
+  percentual_de_lucro_liquido_por_area: z.number().positive('Tamanho da área deve ser positivo'),
+
 })
 
 type ServiceFormData = z.infer<typeof serviceSchema>
@@ -51,7 +60,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
   const [aeronaves, setAeronaves] = useState([])
   const [employees, setEmployees] = useState([])
 
-  const { control, handleSubmit, formState: { errors }, reset, setValue } = useForm<ServiceFormData>({
+  const { control, handleSubmit, formState: { errors }, reset, setValue, getValues } = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
       data_inicio: '',
@@ -61,17 +70,29 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
       tamanho_area_hectares: undefined,
       tipo_aplicacao_na_area: '',
       quantidade_no_hopper_por_voo: undefined,
-      tipo_de_vazao: '',
+      tipo_de_vazao: 0,
       quantidade_de_voos_na_area: undefined,
       valor_total_da_area: undefined,
       confirmacao_de_pagamento_da_area: '',
-      tempo_de_voo_gasto_na_area: '',
+      tempo_de_voo_gasto_na_area: 0,
       aeronave_id: '',
       employee_id: '',
       confirmacao_de_pagamento_do_piloto: undefined,
+      valor_por_hectare: 0,
+      porcentagem_comissao: 0,
+      comissao_piloto: 0,
+      valor_por_alqueire: 0,
+      valor_medio_por_hora_de_voo: 0,
+      tamanho_area_alqueires: 0,
+      lucro_por_area: 0,
+      percentual_de_lucro_liquido_por_area: 0
     }
   })
 
+  if (errors) {
+    console.log(errors);
+
+  }
   useEffect(() => {
     async function getData() {
       const avioesData = await axios.get('/api/aircraft')
@@ -83,14 +104,13 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
       }))
     }
     getData()
-
+    
   }, [])
-
 
 
   const onSubmit = (data: ServiceFormData) => {
     try {
-      if (!selectedSafra.endDate) {
+      if (!selectedSafra.dataFinal) {
         toast({
           title: "Error",
           description: `Safra não selecionada`,
@@ -98,15 +118,16 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
         })
         return
       }
-      const year = format(selectedSafra.endDate, 'yyyy');
+      const year = format(selectedSafra.dataFinal, 'yyyy');
       const data_inicio_completa = `${data.data_inicio}/${year}`;
       const data_final_completa = `${data.data_final}/${year}`;
+      const token = JSON.parse(localStorage.getItem('token') || JSON.stringify(""))
+
       const resp = axios.post('/api/services', {
         ...data,
-        tempo_de_voo_gasto_na_area:
-          parseFloat(data.tempo_de_voo_gasto_na_area),
         data_inicio: data_inicio_completa,
-        data_final: data_final_completa
+        data_final: data_final_completa,
+        criado_por: token?.user?.id || 1
       })
 
       toast({
@@ -188,9 +209,100 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
             <Controller
               name="tamanho_area_hectares"
               control={control}
-              render={({ field }) => <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />}
+              render={({ field }) =>
+                <Input type="number" {...field} onChange={(e) => {
+                  const hectares = parseFloat(e.target.value);
+                  field.onChange(hectares);
+                  setValue("tamanho_area_alqueires", hectares / 4.84);
+                }} />
+              }
             />
             {errors.tamanho_area_hectares && <p className="text-red-500 text-sm mt-1">{errors.tamanho_area_hectares.message}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="valor_total_da_area">Valor Total da Área</Label>
+            <Controller
+              name="valor_total_da_area"
+              control={control}
+              render={({ field }) => <Input type="number" {...field}
+                onChange={e => {
+                  field.onChange(parseFloat(e.target.value))
+                  setValue('valor_por_hectare', field.value / getValues('tamanho_area_hectares'))
+                  setValue('valor_por_alqueire', getValues('valor_por_hectare') * 4.84)
+                }} />}
+            />
+            {errors.valor_total_da_area && <p className="text-red-500 text-sm mt-1">{errors.valor_total_da_area.message}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="tempo_de_voo_gasto_na_area">Tempo de Vôo Gasto na Area</Label>
+            <Controller
+              name="tempo_de_voo_gasto_na_area"
+              control={control}
+              render={({ field }) => <Input type="number" {...field}
+                onChange={e => {
+                  field.onChange(parseInt(e.target.value))
+                  setValue('valor_medio_por_hora_de_voo', getValues('valor_total_da_area') / e.target.value)
+                }} />}
+            />
+            {errors.tempo_de_voo_gasto_na_area && <p className="text-red-500 text-sm mt-1">{errors.tempo_de_voo_gasto_na_area.message}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="tamanho_area_alqueires">Tamanho da Área (Alqueres)</Label>
+            <Controller
+              name="tamanho_area_alqueires"
+              control={control}
+              render={({ field }) => (
+                <Input disabled type="number" value={field.value.toFixed(2)} />
+              )}
+            />
+            {errors.tamanho_area_alqueires && <p className="text-red-500 text-sm mt-1">{errors.tamanho_area_alqueires.message}</p>}
+
+          </div>
+
+
+          <div>
+            <Label htmlFor="valor_por_hectare">Valor por Hectare</Label>
+            <Controller
+              name="valor_por_hectare"
+              control={control}
+              render={({ field }) => (
+                <Input disabled type="number" value={field.value.toFixed(2)} />
+              )}
+            />
+            {errors.valor_por_hectare && <p className="text-red-500 text-sm mt-1">{errors.valor_por_hectare.message}</p>}
+
+          </div>
+          <div>
+            <Label htmlFor="valor_por_alqueire">Valor por Alquere</Label>
+            <Controller
+              name="valor_por_alqueire"
+              control={control}
+              render={({ field }) => (
+                <Input disabled type="number" value={field.value.toFixed(2)} />
+              )}
+            />
+          </div>
+          <div>
+            <Label htmlFor="valor_medio_por_hora_de_voo">Valor Medio Por Horas de Voo</Label>
+            <Controller
+              name="valor_medio_por_hora_de_voo"
+              control={control}
+              render={({ field }) => (
+                <Input disabled type="number" value={field.value.toFixed(2)} />
+              )}
+            />
+          </div>
+          <div>
+            <Label htmlFor="quantidade_no_hopper_por_voo">Quantidade no hopper por voo</Label>
+            <Controller
+              name="quantidade_no_hopper_por_voo"
+              control={control}
+              render={({ field }) => <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />}
+            />
+            {errors.quantidade_no_hopper_por_voo && <p className="text-red-500 text-sm mt-1">{errors.quantidade_no_hopper_por_voo.message}</p>}
           </div>
           <div>
             <Label htmlFor="tipo_aplicacao_na_area">Tipo de Aplicação na Área</Label>
@@ -204,7 +316,8 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="semente">Semente</SelectItem>
-                    <SelectItem value="fertilizante">Fertilizante</SelectItem>
+                    <SelectItem value="liquido">Liquido</SelectItem>
+                    <SelectItem value="nenhum">Nenhum</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -212,20 +325,13 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
             {errors.tipo_aplicacao_na_area && <p className="text-red-500 text-sm mt-1">{errors.tipo_aplicacao_na_area.message}</p>}
           </div>
           <div>
-            <Label htmlFor="quantidade_no_hopper_por_voo">Quantidade no hopper por voo</Label>
-            <Controller
-              name="quantidade_no_hopper_por_voo"
-              control={control}
-              render={({ field }) => <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />}
-            />
-            {errors.quantidade_no_hopper_por_voo && <p className="text-red-500 text-sm mt-1">{errors.quantidade_no_hopper_por_voo.message}</p>}
-          </div>
-          <div>
             <Label htmlFor="tipo_de_vazao">Tipo de vazão</Label>
             <Controller
               name="tipo_de_vazao"
               control={control}
-              render={({ field }) => <Input {...field} />}
+              render={({ field }) => <Input type='number' {...field} onChange={e => {
+                field.onChange(Number(e.target.value))
+              }} />}
             />
             {errors.tipo_de_vazao && <p className="text-red-500 text-sm mt-1">{errors.tipo_de_vazao.message}</p>}
           </div>
@@ -238,15 +344,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
             />
             {errors.quantidade_de_voos_na_area && <p className="text-red-500 text-sm mt-1">{errors.quantidade_de_voos_na_area.message}</p>}
           </div>
-          <div>
-            <Label htmlFor="valor_total_da_area">Valor Total da Área</Label>
-            <Controller
-              name="valor_total_da_area"
-              control={control}
-              render={({ field }) => <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />}
-            />
-            {errors.valor_total_da_area && <p className="text-red-500 text-sm mt-1">{errors.valor_total_da_area.message}</p>}
-          </div>
+
           <div>
             <Label htmlFor="confirmacao_de_pagamento_da_area">Confirmação de Pagamento da Área</Label>
             <Controller
@@ -256,15 +354,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
             />
             {errors.confirmacao_de_pagamento_da_area && <p className="text-red-500 text-sm mt-1">{errors.confirmacao_de_pagamento_da_area.message}</p>}
           </div>
-          <div>
-            <Label htmlFor="tempo_de_voo_gasto_na_area">Tempo de Voo Gasto na Área</Label>
-            <Controller
-              name="tempo_de_voo_gasto_na_area"
-              control={control}
-              render={({ field }) => <Input {...field} type='number' />}
-            />
-            {errors.tempo_de_voo_gasto_na_area && <p className="text-red-500 text-sm mt-1">{errors.tempo_de_voo_gasto_na_area.message}</p>}
-          </div>
+
           <div>
             <Label htmlFor="aeronave_id">Aeronave</Label>
             <Controller
@@ -325,6 +415,50 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
               )}
             />
             {errors.confirmacao_de_pagamento_do_piloto && <p className="text-red-500 text-sm mt-1">{errors.confirmacao_de_pagamento_do_piloto.message}</p>}
+          </div>
+          <div>
+            <Label htmlFor="porcentagem_comissao">Porcentagem da Comissão</Label>
+            <Controller
+              name="porcentagem_comissao"
+              control={control}
+              render={({ field }) => <Input {...field} type='number' onChange={e => {
+                field.onChange(parseInt(e.target.value))
+                setValue('comissao_piloto', getValues('porcentagem_comissao') * getValues('valor_total_da_area') / 100)
+                setValue('lucro_por_area', getValues('valor_total_da_area') - getValues('porcentagem_comissao') * getValues('valor_total_da_area') / 100)
+                setValue('percentual_de_lucro_liquido_por_area', getValues('lucro_por_area') * 100 / getValues('valor_total_da_area'))
+              }} />}
+            />
+            {errors.porcentagem_comissao && <p className="text-red-500 text-sm mt-1">{errors.porcentagem_comissao.message}</p>}
+          </div>
+          <div>
+            <Label htmlFor="comissao_piloto">Comissão do Piloto</Label>
+            <Controller
+              name="comissao_piloto"
+              control={control}
+              render={({ field }) => <Input disabled {...field} type='number' onChange={e => {
+                field.onChange(e.target.value)
+
+              }} />}
+            />
+            {errors.comissao_piloto && <p className="text-red-500 text-sm mt-1">{errors.comissao_piloto.message}</p>}
+          </div>
+          <div>
+            <Label htmlFor="lucro_por_area">Lucro por Area</Label>
+            <Controller
+              name="lucro_por_area"
+              control={control}
+              render={({ field }) => <Input disabled {...field} type='number' />}
+            />
+            {errors.lucro_por_area && <p className="text-red-500 text-sm mt-1">{errors.lucro_por_area.message}</p>}
+          </div>
+          <div>
+            <Label htmlFor="percentual_de_lucro_liquido_por_area">Percentual de Lucro Líquido por Area</Label>
+            <Controller
+              name="percentual_de_lucro_liquido_por_area"
+              control={control}
+              render={({ field }) => <Input disabled {...field} type='number' />}
+            />
+            {errors.percentual_de_lucro_liquido_por_area && <p className="text-red-500 text-sm mt-1">{errors.percentual_de_lucro_liquido_por_area.message}</p>}
           </div>
         </div>
         <Button type="submit" className="w-full">Adicionar Serviço</Button>

@@ -18,8 +18,6 @@ export async function GET() {
                 }
             });
 
-
-
             return {
                 id: service.id,
                 data_inicio: service.data_inicio,
@@ -65,11 +63,11 @@ export async function POST(req) {
             quantidade_no_hopper_por_voo, tipo_de_vazao, quantidade_de_voos_na_area,
             valor_por_alqueire, valor_por_hectare, valor_total_da_area,
             confirmacao_de_pagamento_da_area, tempo_de_voo_gasto_na_area,
-            aeronave_id, employee_id, criado_por, porcentagem_da_comissão,
-            comissão_do_piloto, confirmacao_de_pagamento_do_piloto, despesas
+            aeronave_id, employee_id, criado_por, porcentagem_comissao,
+            comissao_piloto, confirmacao_de_pagamento_do_piloto, valor_medio_por_hora_de_voo,
+            lucro_por_area, percentual_de_lucro_liquido_por_area
         } = body;
 
-        // Criar o novo serviço
         const newService = await prisma.services.create({
             data: {
                 data_inicio: new Date(data_inicio),
@@ -79,23 +77,32 @@ export async function POST(req) {
                 tamanho_area_hectares,
                 tamanho_area_alqueires,
                 tipo_aplicacao_na_area,
-                quantidade_no_hopper_por_voo: String(quantidade_no_hopper_por_voo), // Convertendo para string                tipo_de_vazao,
+                quantidade_no_hopper_por_voo: String(quantidade_no_hopper_por_voo),
                 quantidade_de_voos_na_area,
                 valor_total_da_area,
                 confirmacao_de_pagamento_da_area,
                 tempo_de_voo_gasto_na_area,
                 aeronave_id: Number(aeronave_id),
                 employee_id: Number(employee_id),
-                criado_por
+                criado_por,
+                valor_por_alqueire,
+                valor_por_hectare,
+                tipo_de_vazao,
+                criado_em: new Date(Date.now()),
+                valor_medio_por_hora_de_voo,
+                lucro_por_area,
+                percentual_de_lucro_liquido_por_area
             }
         });
 
-        // Criar a comissão do piloto
+        console.log(newService);
+
         await prisma.expenses.create({
             data: {
                 origem: 'Comissão do Funcionário',
-                porcentagem: porcentagem_da_comissão,
-                valor: comissão_do_piloto,
+                porcentagem: porcentagem_comissao,
+                valor: comissao_piloto,
+                data: new Date(Date.now()),
                 services: {
                     connect: {
                         id: newService.id
@@ -104,6 +111,11 @@ export async function POST(req) {
                 employees: {
                     connect: {
                         id: Number(employee_id)
+                    }
+                },
+                aircraft: {
+                    connect: {
+                        id: Number(aeronave_id)
                     }
                 },
                 confirma__o_de_pagamento: confirmacao_de_pagamento_do_piloto
@@ -125,14 +137,12 @@ export async function DELETE(req) {
             return NextResponse.json({ error: 'Nenhum serviço selecionado para deletar.' }, { status: 400 });
         }
 
-        // Deleta as despesas associadas aos serviços
         await prisma.expenses.deleteMany({
             where: {
                 service_id: { in: ids },
             },
         });
 
-        // Deleta os serviços
         await prisma.services.deleteMany({
             where: {
                 id: { in: ids },

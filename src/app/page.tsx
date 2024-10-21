@@ -41,7 +41,7 @@ export default function Dashboard() {
       const response = await axios.post('/api/login', { email, password })
 
       if (response.status === 200) {
-        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('token', JSON.stringify(response.data))
         setIsAuthenticated(true)
         setUser(response.data.user)
 
@@ -83,7 +83,7 @@ export default function Dashboard() {
       case 'services':
         return <ServiceList selectedSafra={selectedSafra} />
       case 'safras':
-        return <SafraManagement setLoadSafra={setLoadSafra}/>
+        return <SafraManagement setLoadSafra={setLoadSafra} />
       case 'dashboard':
       default:
         return <DashboardPage selectedSafra={selectedSafra} />
