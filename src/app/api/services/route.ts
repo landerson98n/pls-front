@@ -81,7 +81,7 @@ export async function POST(req) {
                 quantidade_de_voos_na_area,
                 valor_total_da_area,
                 confirmacao_de_pagamento_da_area,
-                tempo_de_voo_gasto_na_area,
+                tempo_de_voo_gasto_na_area: parseFloat(tempo_de_voo_gasto_na_area),
                 aeronave_id: Number(aeronave_id),
                 employee_id: Number(employee_id),
                 criado_por,

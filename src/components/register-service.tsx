@@ -30,7 +30,7 @@ const serviceSchema = z.object({
   quantidade_de_voos_na_area: z.number().int().positive('Quantidade de voos deve ser um número inteiro positivo'),
   valor_total_da_area: z.number().positive('Valor total da área deve ser positivo'),
   confirmacao_de_pagamento_da_area: z.string().nonempty('Confirmação de pagamento é obrigatória'),
-  tempo_de_voo_gasto_na_area: z.number().positive('Tamanho da área deve ser positivo'),
+  tempo_de_voo_gasto_na_area: z.string().nonempty('Tempo de vôo é obrigatório'),
   aeronave_id: z.string().nonempty('Aeronave é obrigatória'),
   employee_id: z.string().nonempty('Piloto é obrigatório'),
   confirmacao_de_pagamento_do_piloto: z.enum(['Em aberto', 'Pago'], {
@@ -74,7 +74,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
       quantidade_de_voos_na_area: undefined,
       valor_total_da_area: undefined,
       confirmacao_de_pagamento_da_area: '',
-      tempo_de_voo_gasto_na_area: 0,
+      tempo_de_voo_gasto_na_area: '',
       aeronave_id: '',
       employee_id: '',
       confirmacao_de_pagamento_do_piloto: undefined,
@@ -89,10 +89,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
     }
   })
 
-  if (errors) {
-    console.log(errors);
 
-  }
   useEffect(() => {
     async function getData() {
       const avioesData = await axios.get('/api/aircraft')
@@ -104,7 +101,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
       }))
     }
     getData()
-    
+
   }, [])
 
 
@@ -122,12 +119,14 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
       const data_inicio_completa = `${data.data_inicio}/${year}`;
       const data_final_completa = `${data.data_final}/${year}`;
       const token = JSON.parse(localStorage.getItem('token') || JSON.stringify(""))
-
+      const time = data.tempo_de_voo_gasto_na_area.split(":")
+      const hour = parseFloat(time[0]) + parseFloat(time[1]) / 60
       const resp = axios.post('/api/services', {
         ...data,
         data_inicio: data_inicio_completa,
         data_final: data_final_completa,
-        criado_por: token?.user?.id || 1
+        criado_por: token?.user?.id || 1,
+        tempo_de_voo_gasto_na_area: hour
       })
 
       toast({
@@ -240,10 +239,10 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
             <Controller
               name="tempo_de_voo_gasto_na_area"
               control={control}
-              render={({ field }) => <Input type="number" {...field}
+              render={({ field }) => <Input type="time" {...field}
                 onChange={e => {
-                  field.onChange(parseInt(e.target.value))
-                  setValue('valor_medio_por_hora_de_voo', getValues('valor_total_da_area') / e.target.value)
+                  field.onChange(e.target.value)
+                  setValue('valor_medio_por_hora_de_voo', getValues('valor_total_da_area') / parseInt(e.target.value))
                 }} />}
             />
             {errors.tempo_de_voo_gasto_na_area && <p className="text-red-500 text-sm mt-1">{errors.tempo_de_voo_gasto_na_area.message}</p>}
@@ -368,7 +367,7 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
                   </SelectTrigger>
                   <SelectContent>
                     {aeronaves.map((aeronave) => (
-                      <SelectItem key={aeronave.id} value={aeronave.id.toString()}>{aeronave.model}</SelectItem>
+                      <SelectItem key={aeronave.id} value={aeronave.id.toString()}>{aeronave.registration} - {aeronave.brand} - {aeronave.model}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
