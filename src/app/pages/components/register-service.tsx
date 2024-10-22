@@ -17,7 +17,7 @@ import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import InputMask from 'react-input-mask';
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { aircraft, employees } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
 
@@ -60,7 +60,7 @@ type Safra = {
 }
 
 export function RegisterService() {
-
+  const queryClient = useQueryClient()
   const { selectedSafra } = useContext(SafraContext);
   const { control, handleSubmit, formState: { errors }, reset, setValue, getValues } = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema),
@@ -90,27 +90,13 @@ export function RegisterService() {
       percentual_de_lucro_liquido_por_area: 0
     }
   })
-  const { data: aeronaves, isLoading: aircraftsLoad } = useQuery<aircraft[]>({
-    queryKey: ['aircrafts'],
-    queryFn: async () => {
-      const response = await axios.get(`/api/aircraft/`);
-      return response.data as aircraft[]
-    },
-    enabled: !!selectedSafra,
-    initialData: [],
-    refetchInterval: 5000
-  })
+  const aeronaves = () => {
+    return queryClient.getQueryData<aircraft[]>(['aircrafts']) || []
+  }
 
-  const { data: employees, isLoading: employeesLoad } = useQuery<employees[]>({
-    queryKey: ['employees'],
-    queryFn: async () => {
-      const response = await axios.get(`/api/employees/`);
-      return response.data as employees[]
-    },
-    enabled: !!selectedSafra,
-    initialData: [],
-    refetchInterval: 5000
-  })
+  const employees = () => {
+    return queryClient.getQueryData<employees[]>(['employees']) || []
+  }
 
   const onSubmit = (data: ServiceFormData) => {
     try {
@@ -373,7 +359,7 @@ export function RegisterService() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {aeronaves.map((aeronave) => (
+                    {aeronaves()?.map((aeronave) => (
                       <SelectItem key={aeronave.id} value={aeronave.id.toString()}>{aeronave.registration} - {aeronave.brand} - {aeronave.model}</SelectItem>
                     ))}
                   </SelectContent>
@@ -383,19 +369,19 @@ export function RegisterService() {
             {errors.aeronave_id && <p className="text-red-500 text-sm mt-1">{errors.aeronave_id.message}</p>}
           </div>
           <div>
-            <Label htmlFor="employee_id">Piloto</Label>
+            <Label htmlFor="employee_id">Funcionário</Label>
             <Controller
               name="employee_id"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger id="employee_id" className="border-[#FC862D] focus:ring-[#FC862D]">
-                    <SelectValue placeholder="Selecione o piloto" >
+                    <SelectValue placeholder="Selecione o funcionário" >
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id.toString()}>{employee.name}</SelectItem>
+                    {employees()?.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id.toString()}>{employee.name} - {employee.role}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

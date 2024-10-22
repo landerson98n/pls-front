@@ -64,21 +64,18 @@ const schema = z.discriminatedUnion('origem', [
 
 type ExpenseFormData = z.infer<typeof schema>
 
-type Safra = {
-  id: string;
-  dataInicio: string;
-  dataFinal: string;
-  label: string;
-}
 
 export function RegisterExpense() {
   const { selectedSafra } = useContext(SafraContext);
 
-  const { control, handleSubmit, watch, formState: { errors } } = useForm<ExpenseFormData>({
+  const { control, handleSubmit, watch, formState: { errors }, reset } = useForm<ExpenseFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       origem: 'Comissão do Funcionário',
-      data: new Date(),
+      data: '',
+      employee_id: '0',
+      porcentagem: 0,
+      service_id: '0'
     },
   })
 
@@ -127,6 +124,7 @@ export function RegisterExpense() {
         title: "Despesa cadastrada",
         description: `A despesa foi cadastrada com sucesso!`,
       })
+      reset()
       queryClient.refetchQueries()
     } catch (error) {
       console.log(error);
@@ -242,7 +240,7 @@ export function RegisterExpense() {
           </>
         )}
 
-        {(selectedOrigin === 'Despesa do Avião' || selectedOrigin === 'Despesa do Veículo' || selectedOrigin === 'Despesa Específica') && expenses.aeronaves && (
+        {(selectedOrigin === 'Despesa do Avião' || selectedOrigin === 'Despesa do Veículo' || selectedOrigin === 'Despesa Específica') && (
           <>
             <div className="space-y-2">
               <Label htmlFor="tipo">Tipo</Label>
@@ -285,7 +283,7 @@ export function RegisterExpense() {
                     </SelectTrigger>
                     <SelectContent>
                       {aeronaves?.map((item => (
-                        <SelectItem value={item.id}>{item.brand} - {item.model} </SelectItem>
+                        <SelectItem value={item.id.toString()}>{item.brand} - {item.model} - {item.registration} </SelectItem>
                       )))}
                     </SelectContent>
                   </Select>

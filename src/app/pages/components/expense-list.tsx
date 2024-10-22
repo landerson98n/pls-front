@@ -68,7 +68,7 @@ export function ExpenseList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
+    
   })
   const { data: vehicle, isLoading: vehicleLoad } = useQuery<expenses[]>({
     queryKey: ['expenses_vehicles'],
@@ -78,7 +78,7 @@ export function ExpenseList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
+    
   })
   const { data: commission, isLoading: commissionLoad } = useQuery<expenses[]>({
     queryKey: ['comissions'],
@@ -88,7 +88,7 @@ export function ExpenseList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
+    
   })
   const { data: aircraft, isLoading: aircraftLoad } = useQuery<expenses[]>({
     queryKey: ['expenses_aircraft'],
@@ -98,7 +98,7 @@ export function ExpenseList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
+    
   })
 
   let filter = {

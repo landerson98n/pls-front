@@ -9,23 +9,25 @@ import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { Menu } from 'lucide-react'
 import { useContext, useEffect, useState } from 'react'
-
+import { useRouter } from 'next/navigation'
 export default function Header() {
-
+    const route = useRouter()
     const { data: safras, isLoading: safrasLoad } = useQuery<safras[]>({
         queryKey: ['safras'],
         queryFn: async () => {
             const response = await axios.get(`/api/safras/`);
+            setSelectedSafra(response.data[0])
             return response.data as safras[]
         },
         initialData: [],
-        refetchInterval: 5000
+        refetchInterval: 50000
     })
 
     const { selectedSafra, setSelectedSafra } = useContext(SafraContext)
 
     const handleLogout = () => {
         localStorage.setItem('token', '')
+        route.push('/')
     }
     const [user, setUser] = useState<string>('')
 
@@ -40,10 +42,6 @@ export default function Header() {
         if (safra) {
             setSelectedSafra(safra)
         }
-    }
-
-    if (safrasLoad) {
-        return
     }
 
     return (

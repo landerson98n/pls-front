@@ -6,7 +6,6 @@ import { useContext } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { useParams } from "next/navigation";
 import { SafraContext } from "@/app/pages/utils/context/safraContext";
-import { expenses } from "@prisma/client";
 
 export default function Page() {
     const { selectedSafra } = useContext(SafraContext)
@@ -18,8 +17,7 @@ export default function Page() {
             const response = await axios.get(`/api/despesas_por_categoria_especifica/${selectedSafra.dataInicio}/${selectedSafra.dataFinal}/${idAviao}/${idFuncionario}`)
             return response.data
         },
-        initialData: [],
-        refetchInterval: 5000
+        initialData: []
     })
 
     const formatYAxis = (value: number) => {

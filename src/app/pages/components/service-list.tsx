@@ -85,7 +85,7 @@ export function ServiceList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
+    
   })
 
 
@@ -97,7 +97,7 @@ export function ServiceList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
+    
   })
 
 
