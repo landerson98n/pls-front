@@ -3,7 +3,7 @@ import { Plane } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function Aside() {
+export default function Aside() {
     const route = useRouter()
     const [activeComponent, setActiveComponent] = useState('dashboard')
 

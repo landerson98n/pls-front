@@ -10,7 +10,7 @@ import axios from 'axios'
 import { Menu } from 'lucide-react'
 import { useContext, useEffect, useState } from 'react'
 
-export function Header() {
+export default function Header() {
 
     const { data: safras, isLoading: safrasLoad } = useQuery<safras[]>({
         queryKey: ['safras'],
