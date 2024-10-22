@@ -1,6 +1,5 @@
-import { Aside } from "./components/aside";
-import { Header } from "./components/header/page";
-import { SafraProvider } from "./utils/provider/safraProvider";
+import Aside from '@/app/pages/components/aside'
+import  Header  from "@/app/pages/components/header/page";
 export default function Layout({ children }) {
     return (
 
