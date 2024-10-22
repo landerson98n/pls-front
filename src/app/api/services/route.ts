@@ -65,7 +65,9 @@ export async function POST(req) {
             confirmacao_de_pagamento_da_area, tempo_de_voo_gasto_na_area,
             aeronave_id, employee_id, criado_por, porcentagem_comissao,
             comissao_piloto, confirmacao_de_pagamento_do_piloto, valor_medio_por_hora_de_voo,
-            lucro_por_area, percentual_de_lucro_liquido_por_area
+            lucro_por_area, percentual_de_lucro_liquido_por_area, other_id,
+            porcentagem_comissao_other,
+            comissao_other, confirmacao_de_pagamento_other
         } = body;
 
         const newService = await prisma.services.create({
@@ -95,7 +97,6 @@ export async function POST(req) {
             }
         });
 
-        console.log(newService);
 
         await prisma.expenses.create({
             data: {
@@ -121,6 +122,34 @@ export async function POST(req) {
                 confirma__o_de_pagamento: confirmacao_de_pagamento_do_piloto
             }
         });
+        console.log(porcentagem_comissao_other);
+        
+        if (porcentagem_comissao_other) {
+            await prisma.expenses.create({
+                data: {
+                    origem: 'Comissão do Funcionário',
+                    porcentagem: porcentagem_comissao_other,
+                    valor: comissao_other,
+                    data: new Date(Date.now()),
+                    services: {
+                        connect: {
+                            id: newService.id
+                        }
+                    },
+                    employees: {
+                        connect: {
+                            id: Number(other_id)
+                        }
+                    },
+                    aircraft: {
+                        connect: {
+                            id: Number(aeronave_id)
+                        }
+                    },
+                    confirma__o_de_pagamento: confirmacao_de_pagamento_other
+                }
+            });
+        }
 
         return NextResponse.json({ message: "Service and expenses created successfully" }, { status: 201 });
     } catch (error) {

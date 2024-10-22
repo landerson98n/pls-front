@@ -47,7 +47,10 @@ const serviceSchema = z.object({
   valor_medio_por_hora_de_voo: z.number().positive('Tamanho da área deve ser positivo'),
   lucro_por_area: z.number().positive('Tamanho da área deve ser positivo'),
   percentual_de_lucro_liquido_por_area: z.number().positive('Tamanho da área deve ser positivo'),
-
+  other_id: z.string().optional(),
+  porcentagem_comissao_other: z.number().positive().optional(),
+  comissao_other: z.number().positive().optional(),
+  confirmacao_de_pagamento_other: z.string().optional()
 })
 
 type ServiceFormData = z.infer<typeof serviceSchema>
@@ -87,7 +90,11 @@ export function RegisterService() {
       valor_medio_por_hora_de_voo: 0,
       tamanho_area_alqueires: 0,
       lucro_por_area: 0,
-      percentual_de_lucro_liquido_por_area: 0
+      percentual_de_lucro_liquido_por_area: 0,
+      other_id: '',
+      porcentagem_comissao_other: 0,
+      comissao_other: 0,
+      confirmacao_de_pagamento_other: ''
     }
   })
   const aeronaves = () => {
@@ -369,19 +376,19 @@ export function RegisterService() {
             {errors.aeronave_id && <p className="text-red-500 text-sm mt-1">{errors.aeronave_id.message}</p>}
           </div>
           <div>
-            <Label htmlFor="employee_id">Funcionário</Label>
+            <Label htmlFor="employee_id">Piloto</Label>
             <Controller
               name="employee_id"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger id="employee_id" className="border-[#FC862D] focus:ring-[#FC862D]">
-                    <SelectValue placeholder="Selecione o funcionário" >
+                    <SelectValue placeholder="Selecione o piloto" >
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {employees()?.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id.toString()}>{employee.name} - {employee.role}</SelectItem>
+                      employee.role === 'Piloto' && <SelectItem key={employee.id} value={employee.id.toString()}>{employee.name} - {employee.role}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -433,6 +440,74 @@ export function RegisterService() {
               }} />}
             />
             {errors.comissao_piloto && <p className="text-red-500 text-sm mt-1">{errors.comissao_piloto.message}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="other_id">Outro Funcionário</Label>
+            <Controller
+              name="other_id"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger id="other_id" className="border-[#FC862D] focus:ring-[#FC862D]">
+                    <SelectValue placeholder="Selecione o funcionário" >
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees()?.map((employee) => (
+                      employee.role !== 'Piloto' && <SelectItem key={employee.id} value={employee.id.toString()}>{employee.name} - {employee.role}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.employee_id && <p className="text-red-500 text-sm mt-1">{errors.employee_id.message}</p>}
+          </div>
+          <div>
+            <Label htmlFor="porcentagem_comissao_other">Porcentagem da Comissão Outro Funcionário</Label>
+            <Controller
+              name="porcentagem_comissao_other"
+              control={control}
+              render={({ field }) => <Input {...field} type='number' onChange={e => {
+                field.onChange(parseInt(e.target.value))
+                setValue('comissao_other', (getValues('porcentagem_comissao_other') || 0) * getValues('valor_total_da_area') / 100)
+                setValue('lucro_por_area', getValues('valor_total_da_area') - (getValues('porcentagem_comissao_other') || 0)* getValues('valor_total_da_area') / 100)
+                setValue('percentual_de_lucro_liquido_por_area', getValues('lucro_por_area') * 100 / getValues('valor_total_da_area'))
+              }} />}
+            />
+            {errors.porcentagem_comissao && <p className="text-red-500 text-sm mt-1">{errors.porcentagem_comissao.message}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="comissao_other">Comissão do Outro Funcionário</Label>
+            <Controller
+              name="comissao_other"
+              control={control}
+              render={({ field }) => <Input disabled {...field} type='number' onChange={e => {
+                field.onChange(e.target.value)
+              }} />}
+            />
+            {errors.comissao_other && <p className="text-red-500 text-sm mt-1">{errors.comissao_other.message}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="confirmacao_de_pagamento_other">Confirmação de Pagamento do Outro Funcionário</Label>
+            <Controller
+              name="confirmacao_de_pagamento_other"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger id="confirmacao_de_pagamento_other" className="border-[#FC862D] focus:ring-[#FC862D]">
+                    <SelectValue placeholder="Selecione o status de pagamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Em aberto">Em aberto</SelectItem>
+                    <SelectItem value="Pago">Pago</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.confirmacao_de_pagamento_do_piloto && <p className="text-red-500 text-sm mt-1">{errors.confirmacao_de_pagamento_do_piloto.message}</p>}
           </div>
           <div>
             <Label htmlFor="lucro_por_area">Lucro por Area</Label>
