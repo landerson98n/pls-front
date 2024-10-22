@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -14,6 +14,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
+import { expenses, services } from '@prisma/client'
+import { useQuery } from '@tanstack/react-query'
+import { SafraContext } from '@/app/pages/utils/context/safraContext'
 
 type Service = {
   id: number
@@ -61,10 +64,10 @@ type Safra = {
   label: string;
 }
 
-export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
-  const [services, setServices] = useState<Service[]>([])
+export function ServiceList() {
+  const { selectedSafra } = useContext(SafraContext);
+
   const [selectedServices, setSelectedServices] = useState<number[]>([])
-  const [expenses, setExpenses] = useState<Expense[]>([])
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingService, setEditingService] = useState<Service | null>(null)
   const [expandedRows, setExpandedRows] = useState<number[]>([])
@@ -73,25 +76,35 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [filters, setFilters] = useState<{ [key in keyof Service]?: string }>({})
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = await getData()
-      const dataExpense = await axios.get('/api/expenses')
-      setServices(data)
-      setExpenses(dataExpense.data)
-    }
-    fetchData()
-  }, [selectedSafra])
 
-  async function getData() {
-    const servicos = await axios.get('/api/services')
-    return servicos.data as Service[] || []
-  }
+  const { data: services, isLoading: servicesLoad, refetch: refetchServices } = useQuery<services[]>({
+    queryKey: ['services'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/services/`);
+      return response.data as services[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
+
+
+  const { data: expenses, isLoading: expensesLoad } = useQuery<expenses[]>({
+    queryKey: ['expenses'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/expenses/`);
+      return response.data as expenses[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
+
 
   const filteredServices = services.filter(service => {
     const serviceDate = new Date(service.criado_em)
-    const safraStartDate = new Date(selectedSafra.dataInicio) 
-    const safraEndDate =  new Date(selectedSafra.dataFinal) 
+    const safraStartDate = new Date(selectedSafra.dataInicio)
+    const safraEndDate = new Date(selectedSafra.dataFinal)
 
     const isWithinSafraDates = !selectedSafra ||
       (serviceDate >= safraStartDate && serviceDate <= safraEndDate)
@@ -126,7 +139,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
   const handleDeleteSelected = async () => {
     try {
       await axios.delete('/api/services/', { data: { ids: selectedServices } })
-      setServices(prev => prev.filter(service => !selectedServices.includes(service.id)))
+      refetchServices()
       setSelectedServices([])
       toast({ title: "Serviços deletados com sucesso" })
     } catch (error) {
@@ -146,21 +159,21 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
   const handleSaveEdit = async () => {
     if (editingService) {
       try {
+        const token = JSON.parse(localStorage.getItem('token') || JSON.stringify(""))
         const response = await axios.put('/api/services', {
           data: {
             id: editingService.id,
             updatedData: {
               ...editingService,
               data_inicio: new Date(editingService.data_inicio),
-              data_final: editingService.data_final ? new Date(editingService.data_final) : ''
+              data_final: editingService.data_final ? new Date(editingService.data_final) : '',
+              criado_por: token?.user?.id || 1,
             },
           }
         })
 
         if (response.status === 200) {
-          setServices(prev => prev.map(service =>
-            service.id === editingService.id ? editingService : service
-          ))
+          refetchServices()
           toast({ title: 'Edição salva com sucesso!' })
           setEditingId(null)
           setEditingService(null)
@@ -180,7 +193,7 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
   const handleDeleteService = async (serviceId: number) => {
     try {
       await axios.delete('/api/services/', { data: { ids: [serviceId] } })
-      setServices(prev => prev.filter(service => service.id !== serviceId))
+      refetchServices()
       setSelectedServices([])
       toast({ title: "Serviço deletado com sucesso" })
     } catch (error) {
@@ -626,14 +639,14 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                   </div>
                 </TableCell>
                 <TableCell>{service.id}</TableCell>
-                <TableCell>{renderEditableCell(service, 'aeronave_data')}</TableCell>
-                <TableCell>{renderEditableCell(service, 'employee_data')}</TableCell>
+                <TableCell>{service.aeronave_data}</TableCell>
+                <TableCell>{service.employee_data}</TableCell>
                 {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')
-                    ?.toString()
-                    .toLowerCase()
-                    .includes("aberto") ? 
-                    <TableCell className='bg-yellow-600'> {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell> : 
-                    <TableCell> {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell> }
+                  ?.toString()
+                  .toLowerCase()
+                  .includes("aberto") ?
+                  <TableCell className='bg-yellow-600'> {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell> :
+                  <TableCell> {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')}</TableCell>}
                 <TableCell>{renderEditableCell(service, 'solicitante_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'nome_da_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'tamanho_area_hectares')}</TableCell>
@@ -647,7 +660,19 @@ export function ServiceList({ selectedSafra }: { selectedSafra: Safra }) {
                 <TableCell>{renderEditableCell(service, 'valor_medio_por_hora_de_voo')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'tempo_de_voo_gasto_na_area')}</TableCell>
                 <TableCell>{renderEditableCell(service, 'valor_por_alqueire')}</TableCell>
-                <TableCell>{typeof new Date(renderEditableCell(service, 'data_inicio')) === typeof new Date() ? format(new Date(renderEditableCell(service, 'data_inicio')), 'dd/MM/yyyy') : '-'}</TableCell>
+                <TableCell>
+                  {(() => {
+                    const dateValue = renderEditableCell(service, 'data_inicio');
+                    const parsedDate = new Date(dateValue);
+
+                    // Verifica se a data é válida
+                    if (!isNaN(parsedDate)) {
+                      return format(parsedDate, 'dd/MM/yyyy');
+                    } else {
+                      return '-';
+                    }
+                  })()}
+                </TableCell>
                 <TableCell>
                   {(() => {
                     const dateValue = renderEditableCell(service, 'data_final');

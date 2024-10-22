@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
@@ -14,19 +14,21 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { expenses } from '@prisma/client'
+import { SafraContext } from '@/app/pages/utils/context/safraContext'
 type Expense = {
   id: number
-  data: string
+  data: Date
   origem: string
   tipo?: string
   descricao?: string
   valor: number
-  confirmação_de_pagamento: string
+  confirma__o_de_pagamento: string
   aircraft_name?: string
   porcentagem?: number
   employee_name?: string
   service_name?: string
-  harvest: string
 }
 
 const expenseTypes = [
@@ -43,50 +45,78 @@ type Safra = {
   label: string;
 }
 
-export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
-  const [activeTab, setActiveTab] = useState('aircraft')
-  const [expenses, setExpenses] = useState<Record<string, Expense[]>>({
-    aircraft: [],
-    commission: [],
-    vehicle: [],
-    specific: [],
-  })
+export function ExpenseList() {
+  const queryClient = useQueryClient();
+  const { selectedSafra } = useContext(SafraContext);
 
+  const [activeTab, setActiveTab] = useState('aircraft')
   const [selectedExpenses, setSelectedExpenses] = useState<number[]>([])
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [expandedRows, setExpandedRows] = useState<number[]>([])
-
-  // New state variables for pagination, filtering, and search
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [searchTerm, setSearchTerm] = useState('')
   const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [filters, setFilters] = useState<{ [key in keyof Expense]?: string }>({})
 
-  const fetchData = async () => {
-    try {
-      const expensesAircraft = await axios.get('/api/expenses_aircraft');
-      const expensesCommission = await axios.get('/api/comissions');
-      const expensesVehicle = await axios.get('/api/expenses_vehicles');
-      const expensesSpecific = await axios.get('/api/expenses_specific');
-      setExpenses({
-        specific: expensesSpecific.data,
-        vehicle: expensesVehicle.data,
-        commission: expensesCommission.data,
-        aircraft: expensesAircraft.data,
-      });
-    } catch (error) {
-      console.error('Error fetching expenses:', error);
+  const { data: specific, isLoading: specificLoad } = useQuery<expenses[]>({
+    queryKey: ['expenses_specific'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/expenses_specific/`);
+      return response.data as expenses[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
+  const { data: vehicle, isLoading: vehicleLoad } = useQuery<expenses[]>({
+    queryKey: ['expenses_vehicles'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/expenses_vehicles/`);
+      return response.data as expenses[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
+  const { data: commission, isLoading: commissionLoad } = useQuery<expenses[]>({
+    queryKey: ['comissions'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/comissions/`);
+      return response.data as expenses[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
+  const { data: aircraft, isLoading: aircraftLoad } = useQuery<expenses[]>({
+    queryKey: ['expenses_aircraft'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/expenses_aircraft/`);
+      return response.data as expenses[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
+
+  let filter = {
+    'aircraft': [],
+    'commission': [],
+    'vehicle': [],
+    'specific': []
+  }
+
+  if (!aircraftLoad && !commissionLoad && !vehicleLoad && !specificLoad) {
+    filter = {
+      'aircraft': aircraft,
+      'commission': commission,
+      'vehicle': vehicle,
+      'specific': specific
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [selectedSafra]);
-
-  const filteredExpenses = expenses[activeTab]?.filter(expense => {
+  }
+  const filteredExpenses = filter && filter[activeTab]?.filter(expense => {
     if (!expense) {
       return null
     }
@@ -97,21 +127,13 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
     const isWithinSafraDates = !selectedSafra ||
       (expenseDate >= safraStartDate && expenseDate <= safraEndDate)
 
-    const matchesSearch = searchTerm === '' ||
-      expense?.aircraft_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense?.id.toString() === searchTerm ||
-      expense?.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.descricao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.origem.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense?.confirmação_de_pagamento && expense?.confirmação_de_pagamento.toLowerCase().includes(searchTerm.toLowerCase())
-    return isWithinSafraDates && matchesSearch && Object.entries(filters).every(([key, value]) => {
+    return isWithinSafraDates && Object.entries(filters).every(([key, value]) => {
       if (!value) return true
       const serviceValue = expense[key as keyof Expense]?.toString()
       return typeof serviceValue === 'string' && serviceValue.toLowerCase().includes(value.toLowerCase())
     })
   })
 
-  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
   const currentItems = filteredExpenses?.slice(indexOfFirstItem, indexOfLastItem)
@@ -142,25 +164,18 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
   const handleSaveEdit = async () => {
     if (editingExpense) {
       try {
-        // Faz a chamada à API para atualizar a despesa no banco de dados
         const response = await axios.put('/api/expenses', {
           id: editingExpense.id,
           updatedData: { ...editingExpense, data: new Date(editingExpense.data) },
         });
 
         if (response.status === 200) {
-          // Atualiza o estado local se o update for bem-sucedido
-          setExpenses(prevExpenses => ({
-            ...prevExpenses,  // Preserva as outras abas
-            [activeTab]: prevExpenses[activeTab].map(expense =>
-              expense.id === editingExpense.id ? editingExpense : expense
-            ),  // Atualiza a despesa dentro da aba ativa
-          }));
-
-          // Limpa o estado de edição após salvar
+          queryClient.refetchQueries()
           setEditingId(null);
           setEditingExpense(null);
         }
+        toast({ title: 'Salvo com sucesso!' });
+
       } catch (error) {
         console.error('Erro ao atualizar despesa:', error);
         toast({ title: 'Erro ao salvar a edição. Tente novamente.', variant: 'destructive' });
@@ -181,10 +196,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
           ids: [id]
         }
       })
-      setExpenses(prev => ({
-        ...prev,
-        [activeTab]: prev[activeTab].filter(expense => expense.id !== id)
-      }))
+      queryClient.refetchQueries()
       toast({
         title: "Despesas deletadas com sucesso",
       })
@@ -204,11 +216,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
           ids: selectedExpenses
         }
       })
-
-      setExpenses(prev => ({
-        ...prev,
-        [activeTab]: prev[activeTab].filter(expense => !selectedExpenses.includes(expense.id))
-      }))
+      queryClient.refetchQueries()
       setSelectedExpenses([])
       toast({
         title: "Despesas deletadas com sucesso",
@@ -231,14 +239,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
         value
       });
 
-      if (response.status === 200) {
-        setExpenses(prev => ({
-          ...prev,
-          [activeTab]: prev[activeTab].map(expense =>
-            selectedExpenses.includes(expense.id) ? { ...expense, [field]: value } : expense
-          )
-        }));
-      }
+      queryClient.refetchQueries()
       toast({
         title: "Despesas Atualizadas",
       })
@@ -292,7 +293,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
               <p>Aeronave: {expense.aircraft_name}</p>
               <p>Piloto: {expense.employee_name}</p>
               <p>Valor: R$ {Number(expense.valor).toLocaleString()}</p>
-              <p>Pagamento: {expense.confirmação_de_pagamento}</p>
+              <p>Pagamento: {expense.confirma__o_de_pagamento}</p>
             </div>
             {expandedRows.includes(expense.id) && (
               <div className="mt-2 text-xs">
@@ -301,7 +302,6 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
                 {expense.porcentagem && <p>Porcentagem: {expense.porcentagem}%</p>}
                 {expense.service_name && <p>Serviço: {expense.service_name}</p>}
                 {expense.origem && <p>Origem: {expense.origem}</p>}
-                {expense.harvest && <p>Safra: {expense.harvest}</p>}
               </div>
             )}
             <div className="mt-2 flex space-x-2">
@@ -497,8 +497,8 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
               Pagamento
               <Input
                 placeholder="Filtrar Pagamento"
-                value={filters.confirmação_de_pagamento || ''}
-                onChange={(e) => handleFilterChange('confirmação_de_pagamento', e.target.value)}
+                value={filters.confirma__o_de_pagamento || ''}
+                onChange={(e) => handleFilterChange('confirma__o_de_pagamento', e.target.value)}
                 className="mt-1 w-30"
               />
             </TableHead>
@@ -618,9 +618,9 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
               <TableCell>
                 {editingId === expense.id ? (
                   <Select
-                    name="confirmação_de_pagamento"
-                    value={editingExpense?.confirmação_de_pagamento || ''}
-                    onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, confirmação_de_pagamento: value } : null)}
+                    name="confirma__o_de_pagamento"
+                    value={editingExpense?.confirma__o_de_pagamento || ''}
+                    onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, confirma__o_de_pagamento: value } : null)}
                   >
                     <SelectTrigger className="bg-[#556B2F] text-white border-[#8FBC8F]">
                       <SelectValue placeholder="Status de pagamento" />
@@ -631,7 +631,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
                     </SelectContent>
                   </Select>
                 ) : (
-                  expense.confirmação_de_pagamento
+                  expense.confirma__o_de_pagamento
                 )}
               </TableCell>
             </TableRow>
@@ -671,7 +671,7 @@ export function ExpenseList({ selectedSafra }: { selectedSafra: Safra }) {
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
               {selectedExpenses.length > 0 && (
                 <>
-                  <Select onValueChange={(value) => handleBulkUpdate('confirmação_de_pagamento', value)}>
+                  <Select onValueChange={(value) => handleBulkUpdate('confirma__o_de_pagamento', value)}>
                     <SelectTrigger className="w-full sm:w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
                       <SelectValue placeholder="Atualizar pagamento" />
                     </SelectTrigger>

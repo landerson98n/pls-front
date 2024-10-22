@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,9 @@ import { toast } from '@/hooks/use-toast'
 import axios from 'axios'
 import { Edit, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
+import { SafraContext } from '@/app/pages/utils/context/safraContext'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { safras } from '@prisma/client'
 type Safra = {
     id: string;
     dataInicio: string;
@@ -17,41 +20,33 @@ type Safra = {
     label: string;
 }
 
-export function SafraManagement({ setLoadSafra }) {
-    const [safras, setSafras] = useState<Safra[]>([])
+export function SafraManagement() {
+    const queryClient = useQueryClient();
     const [newSafra, setNewSafra] = useState<Omit<Safra, 'id'>>({ dataInicio: '', dataFinal: '', label: '' })
     const [editingSafra, setEditingSafra] = useState<Safra | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [load, setLoad] = useState(false)
-    useEffect(() => {
-        fetchSafras()
-        setLoadSafra(safras)
-    }, [isDialogOpen, editingSafra, newSafra, load])
 
-    const fetchSafras = async () => {
-        try {
-            const response = await axios.get('/api/safras')
-            setSafras(response.data)
-        } catch (error) {
-            console.error('Error fetching safras:', error)
-            toast({
-                title: "Erro ao carregar safras",
-                description: "Não foi possível carregar as safras. Por favor, tente novamente.",
-                variant: "destructive",
-            })
-        }
-    }
+    const { data: safras, isLoading: safrasLoad } = useQuery<safras[]>({
+        queryKey: ['safras'],
+        queryFn: async () => {
+            const response = await axios.get(`/api/safras/`);
+            return response.data as safras[]
+        },
+        initialData: [],
+        refetchInterval: 5000
+    })
 
     const handleCreateSafra = async () => {
         try {
             const response = await axios.post('/api/safras', newSafra)
-            setSafras([...safras, response.data])
             setNewSafra({ dataInicio: '', dataFinal: '', label: '' })
             setIsDialogOpen(false)
             toast({
                 title: "Safra criada",
                 description: "A nova safra foi criada com sucesso.",
             })
+            queryClient.refetchQueries()
         } catch (error) {
             console.error('Error creating safra:', error)
             toast({
@@ -67,13 +62,14 @@ export function SafraManagement({ setLoadSafra }) {
 
         try {
             const response = await axios.put(`/api/safras/`, editingSafra)
-            setSafras(safras.map(safra => safra.id === editingSafra.id ? response.data : safra))
             setEditingSafra(null)
             setIsDialogOpen(false)
             toast({
                 title: "Safra atualizada",
                 description: "A safra foi atualizada com sucesso.",
             })
+            queryClient.refetchQueries()
+
         } catch (error) {
             console.error('Error updating safra:', error)
             toast({
@@ -91,12 +87,13 @@ export function SafraManagement({ setLoadSafra }) {
                     id
                 }
             })
-            setSafras(safras.filter(safra => safra.id !== id))
             setLoad(!load)
             toast({
                 title: "Safra excluída",
                 description: "A safra foi excluída com sucesso.",
             })
+            queryClient.refetchQueries()
+
         } catch (error) {
             console.error('Error deleting safra:', error)
             toast({

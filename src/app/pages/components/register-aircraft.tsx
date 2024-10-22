@@ -8,8 +8,9 @@ import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Toast } from './ui/toast'
+import { Toast } from '../../../components/ui/toast'
 import { toast } from '@/hooks/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 
 const aircraftSchema = z.object({
   registration: z.string().min(5, 'Matrícula deve ter pelo menos 5 caracteres'),
@@ -20,6 +21,7 @@ const aircraftSchema = z.object({
 type AircraftFormValues = z.infer<typeof aircraftSchema>
 
 export function RegisterAircraft() {
+  const queryClient = useQueryClient();
   const form = useForm<AircraftFormValues>({
     resolver: zodResolver(aircraftSchema),
     defaultValues: {
@@ -35,6 +37,7 @@ export function RegisterAircraft() {
         title: "Aeronave cadastrada com sucesso!",
         description: `A aeronave ${data.registration} foi adicionada.`,
       })
+      await queryClient.refetchQueries()
       form.reset()
     } catch (error) {
       console.error('Error creating aircraft:', error)

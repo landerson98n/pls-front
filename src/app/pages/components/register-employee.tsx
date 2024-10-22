@@ -79,7 +79,7 @@ export function RegisterEmployee() {
                   <SelectContent className="bg-[#556B2F] text-white">
                     <SelectItem value="Piloto">Piloto</SelectItem>
                     <SelectItem value="Mecânico">Mecânico</SelectItem>
-                    <SelectItem value="Auxiliar de pista">Administrativo</SelectItem>
+                    <SelectItem value="Auxiliar de pista">Auxiliar de Pista</SelectItem>
                     <SelectItem value="Administrativo">Administrativo</SelectItem>
                     <SelectItem value="Outro">Outro</SelectItem>
                   </SelectContent>

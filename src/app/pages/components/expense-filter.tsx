@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -11,6 +11,9 @@ import { Label } from '@/components/ui/label'
 import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
 import InputMask from 'react-input-mask';
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { aircraft, employees, services } from '@prisma/client'
+import { SafraContext } from '@/app/pages/utils/context/safraContext'
 
 const baseSchema = z.object({
   data: z.date({
@@ -68,7 +71,9 @@ type Safra = {
   label: string;
 }
 
-export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
+export function RegisterExpense() {
+  const { selectedSafra } = useContext(SafraContext);
+
   const { control, handleSubmit, watch, formState: { errors } } = useForm<ExpenseFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -77,36 +82,43 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
     },
   })
 
-  const [expenses, setExpenses] = useState<Record<string, []>>({
-    funcionario: [],
-    aeronaves: [],
-    veiculos: [],
-    servicos: []
-  })
+  const queryClient = useQueryClient();
 
   const selectedOrigin = watch('origem')
 
-  const fetchData = async () => {
-    try {
-      const expensesFuncionario = await axios.get('/api/employees');
-      const expensesAeronaves = await axios.get('/api/aircraft');
-      const expensesServicos = await axios.get('/api/services');
+  const { data: aeronaves, isLoading: aircraftsLoad } = useQuery<aircraft[]>({
+    queryKey: ['aircrafts'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/aircraft/`);
+      return response.data as aircraft[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
 
-      setExpenses(prevExpenses => ({
-        ...prevExpenses,
-        funcionario: expensesFuncionario.data,
-        aeronaves: expensesAeronaves.data,
-        servicos: expensesServicos.data
-      }))
+  const { data: funcionario, isLoading: employeesLoad } = useQuery<employees[]>({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/employees/`);
+      return response.data as employees[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
 
-    } catch (error) {
-      console.error('Error fetching expenses:', error);
-    }
-  };
+  const { data: servicos, isLoading: servicesLoad } = useQuery<services[]>({
+    queryKey: ['services'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/services/`);
+      return response.data as services[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedSafra]);
 
   const onSubmit = async (data: ExpenseFormData) => {
     try {
@@ -115,6 +127,7 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
         title: "Despesa cadastrada",
         description: `A despesa foi cadastrada com sucesso!`,
       })
+      queryClient.refetchQueries()
     } catch (error) {
       console.log(error);
       toast({
@@ -180,7 +193,7 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
                       <SelectValue placeholder="Selecione o funcionário" />
                     </SelectTrigger>
                     <SelectContent>
-                      {expenses.funcionario.map((item => (
+                      {funcionario?.map((item => (
                         <SelectItem value={item.id.toString()}>{item.name} - {item.role}</SelectItem>
                       )))}
                     </SelectContent>
@@ -211,13 +224,13 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
                       <SelectValue placeholder="Selecione o serviço" />
                     </SelectTrigger>
                     <SelectContent>
-                      {expenses.servicos.map((item => (
+                      {servicos?.map((item => (
                         <SelectItem value={item.id.toString()}>
                           {`${item.id} |
                           ${item.nome_da_area} |
                           ${item.solicitante_da_area} de
-                          ${item.data_inicio} até
-                          ${item.data_final}`}
+                          ${new Date(item.data_inicio)?.toLocaleString()} até
+                          ${new Date(item.data_final)?.toLocaleString()}`}
                         </SelectItem>
                       )))}
                     </SelectContent>
@@ -271,7 +284,7 @@ export function RegisterExpense({ selectedSafra }: { selectedSafra: Safra }) {
                       <SelectValue placeholder={`Selecione a aeronave`} />
                     </SelectTrigger>
                     <SelectContent>
-                      {expenses.aeronaves.map((item => (
+                      {aeronaves?.map((item => (
                         <SelectItem value={item.id}>{item.brand} - {item.model} </SelectItem>
                       )))}
                     </SelectContent>

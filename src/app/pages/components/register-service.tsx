@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -17,6 +17,9 @@ import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import InputMask from 'react-input-mask';
+import { useQuery } from '@tanstack/react-query'
+import { aircraft, employees } from '@prisma/client'
+import { SafraContext } from '@/app/pages/utils/context/safraContext'
 
 const serviceSchema = z.object({
   data_inicio: z.string().nonempty('Data de início é obrigatória'),
@@ -56,10 +59,9 @@ type Safra = {
   label: string;
 }
 
-export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
-  const [aeronaves, setAeronaves] = useState([])
-  const [employees, setEmployees] = useState([])
+export function RegisterService() {
 
+  const { selectedSafra } = useContext(SafraContext);
   const { control, handleSubmit, formState: { errors }, reset, setValue, getValues } = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
@@ -88,22 +90,27 @@ export function RegisterService({ selectedSafra }: { selectedSafra: Safra }) {
       percentual_de_lucro_liquido_por_area: 0
     }
   })
+  const { data: aeronaves, isLoading: aircraftsLoad } = useQuery<aircraft[]>({
+    queryKey: ['aircrafts'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/aircraft/`);
+      return response.data as aircraft[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
 
-
-  useEffect(() => {
-    async function getData() {
-      const avioesData = await axios.get('/api/aircraft')
-      setAeronaves(avioesData.data)
-
-      const empregadosData = await axios.get('/api/employees')
-      setEmployees(empregadosData.data.filter((item) => {
-        return item.role === "Piloto"
-      }))
-    }
-    getData()
-
-  }, [])
-
+  const { data: employees, isLoading: employeesLoad } = useQuery<employees[]>({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/employees/`);
+      return response.data as employees[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+    refetchInterval: 5000
+  })
 
   const onSubmit = (data: ServiceFormData) => {
     try {
