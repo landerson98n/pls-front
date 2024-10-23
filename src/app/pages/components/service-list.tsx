@@ -46,24 +46,6 @@ type Service = {
   criado_por: string
 }
 
-type Expense = {
-  id: number
-  data: string
-  origem: string
-  porcentagem: number
-  valor: number
-  pagamento: string
-  funcionario: string
-  service_id: string
-}
-
-type Safra = {
-  id: string;
-  dataInicio: string;
-  dataFinal: string;
-  label: string;
-}
-
 export function ServiceList() {
   const { selectedSafra } = useContext(SafraContext);
 
@@ -321,9 +303,6 @@ export function ServiceList() {
               </div>
             )}
             <div className="mt-2 flex space-x-2">
-              <Button variant="outline" size="sm" onClick={() => handleEditService(service)}>
-                <Edit className="h-4 w-4 text-black" />
-              </Button>
               <Button variant="outline" size="sm" onClick={() => handleDeleteService(service.id)}>
                 <Trash2 className="h-4 w-4  text-black" />
               </Button>
