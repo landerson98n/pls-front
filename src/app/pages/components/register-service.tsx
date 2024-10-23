@@ -111,6 +111,17 @@ export function RegisterService() {
     initialData: [],
   })
 
+  function corrigirData(dataString) {
+    // Divide a string pelo separador "/"
+    const [dia, mes, ano] = dataString.split('/');
+
+    // Reorganiza a data no formato "YYYY-MM-DD"
+    const dataFormatada = `${ano}-${mes}-${dia}`;
+
+    // Retorna o objeto Date
+    return new Date(dataFormatada);
+  }
+
   const onSubmit = async (data: ServiceFormData) => {
     try {
       if (!selectedSafra.dataFinal) {
@@ -129,10 +140,10 @@ export function RegisterService() {
       const hour = parseFloat(time[0]) + parseFloat(time[1]) / 60
       const resp = await axios.post('/api/services', {
         ...data,
-        data_inicio: new Date(data_inicio_completa),
-        data_final: new Date(data_final_completa),
-        criado_por: token?.user?.id || 1,
-        tempo_de_voo_gasto_na_area: hour
+        data_inicio: new Date(corrigirData(data_inicio_completa)),
+          data_final: new Date(corrigirData(data_final_completa)),
+            criado_por: token?.user?.id || 1,
+            tempo_de_voo_gasto_na_area: hour
       })
       if (resp.status === 201) {
         toast({
@@ -166,7 +177,7 @@ export function RegisterService() {
               name="data_inicio"
               control={control}
               render={({ field }) => (
-                <InputMask mask="99/99" placeholder="MM/DD" {...field}>
+                <InputMask mask="99/99" placeholder="DD/MM" {...field}>
                   {(inputProps) => <Input {...inputProps} />}
                 </InputMask>
               )}
@@ -183,7 +194,7 @@ export function RegisterService() {
               name="data_final"
               control={control}
               render={({ field }) => (
-                <InputMask mask="99/99" placeholder="MM/DD" {...field}>
+                <InputMask mask="99/99" placeholder="DD/MM" {...field}>
                   {(inputProps) => <Input {...inputProps} />}
                 </InputMask>
               )}

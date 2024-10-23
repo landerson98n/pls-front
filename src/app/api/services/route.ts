@@ -69,7 +69,6 @@ export async function POST(req) {
             porcentagem_comissao_other,
             comissao_other, confirmacao_de_pagamento_other
         } = body;
-        console.log(data_inicio);
         
         const newService = await prisma.services.create({
             data: {
