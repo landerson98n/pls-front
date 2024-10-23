@@ -341,7 +341,7 @@ export function RegisterService() {
               name="tipo_de_vazao"
               control={control}
               render={({ field }) => <Input type='number' {...field} onChange={e => {
-                field.onChange(e.target.value)
+                field.onChange(parseFloat(e.target.value))
               }} />}
             />
             {errors.tipo_de_vazao && <p className="text-red-500 text-sm mt-1">{errors.tipo_de_vazao.message}</p>}
