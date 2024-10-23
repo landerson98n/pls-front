@@ -421,7 +421,7 @@ export function RegisterService() {
               name="porcentagem_comissao"
               control={control}
               render={({ field }) => <Input {...field} type='number' onChange={e => {
-                field.onChange(e.target.value)
+                field.onChange(parseFloat(e.target.value))
                 setValue('comissao_piloto', getValues('porcentagem_comissao') * getValues('valor_total_da_area') / 100)
                 setValue('lucro_por_area', getValues('valor_total_da_area') - getValues('porcentagem_comissao') * getValues('valor_total_da_area') / 100)
                 setValue('percentual_de_lucro_liquido_por_area', getValues('lucro_por_area') * 100 / getValues('valor_total_da_area'))
@@ -469,7 +469,7 @@ export function RegisterService() {
               name="porcentagem_comissao_other"
               control={control}
               render={({ field }) => <Input {...field} type='number' onChange={e => {
-                field.onChange(e.target.value)
+                field.onChange(parseFloat(e.target.value))
                 setValue('comissao_other', (getValues('porcentagem_comissao_other') || 0) * getValues('valor_total_da_area') / 100)
                 setValue('lucro_por_area', getValues('valor_total_da_area') - (getValues('porcentagem_comissao_other') || 0)* getValues('valor_total_da_area') / 100)
                 setValue('percentual_de_lucro_liquido_por_area', getValues('lucro_por_area') * 100 / getValues('valor_total_da_area'))
