@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
     const { dataInicio, dataFinal, aircraft_id } = params;
-    
+
     try {
         const startDate = new Date(dataInicio.split('_').reverse().join('-'));
         const endDate = new Date(dataFinal.split('_').reverse().join('-'));
@@ -21,10 +21,15 @@ export async function GET(request, { params }) {
                 },
             },
             include: {
-                expenses: true,
+                expenses: {
+                    include: {
+                        employees: true
+                    }
+                },
+
             },
-        });   
-                
+        });
+
 
         if (!servicos_e_despesas.length) {
             return NextResponse.json({
@@ -87,8 +92,8 @@ export async function GET(request, { params }) {
         const despesas_de_especificas = despesas.filter(d => d.origem === 'Despesa Específica').reduce((acc, d) => acc + Number(d.valor), 0);
 
         // Calcular as comissões dos pilotos e auxiliares de pista
-        const comissoes_de_pilotos = despesas.filter(d => d.employee?.role === 'Piloto').reduce((acc, d) => acc + Number(d.valor), 0);
-        const comissoes_de_badeco = despesas.filter(d => d.employee?.role === 'Auxiliar de pista').reduce((acc, d) => acc + Number(d.valor), 0);
+        const comissoes_de_pilotos = despesas.filter(d => d.employees?.role === 'Piloto').reduce((acc, d) => acc + Number(d.valor), 0);
+        const comissoes_de_badeco = despesas.filter(d => d.employees?.role === 'Auxiliar de pista').reduce((acc, d) => acc + Number(d.valor), 0);
 
         // Lucro total após deduzir as despesas
         let lucro_total = valor_total_bruto;

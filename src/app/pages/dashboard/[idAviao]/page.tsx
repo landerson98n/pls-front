@@ -21,7 +21,7 @@ export default function Page() {
             return response.data as []
         },
         initialData: [],
-        
+
     })
 
     const { data: aircraftReport, isLoading: aircraftReportLoad } = useQuery<[]>({
@@ -31,7 +31,7 @@ export default function Page() {
             return response.data as []
         },
         initialData: [],
-        
+
     })
 
     const expenses_aircraft = () => {
@@ -119,72 +119,72 @@ export default function Page() {
 
 
     return (
-            <div className="space-y-6">
-                <Card className="bg-[#556B2F]">
-                    <CardHeader>
-                        <CardTitle className='text-white'>Despesas Gerais da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
-                    </CardHeader>
-                    <CardContent className='text-white'>
-                        {balanceData && aircraftReport && (
-                            <>
-                                <p>Receita Total: R$ {Number(balanceData.total_valor_area).toLocaleString()}</p>
-                                <p>Despesas Totais: R$ {Number(balanceData.total_despesas).toLocaleString()}</p>
-                                <p>Lucro Líquido: R$ {Number(balanceData.lucro_liquido).toLocaleString()}</p>
-                                <p>Total Gasto com Combustível: R$ {Number(balanceData.total_combustivel_gasto_na_area).toLocaleString()}</p>
-                                <p>Total Gasto com Óleo: R$ {Number(balanceData.total_oleo_gasto).toLocaleString()}</p>
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
+        <div className="space-y-6">
+            <Card className="bg-[#556B2F]">
+                <CardHeader>
+                    <CardTitle className='text-white'>Despesas Gerais da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
+                </CardHeader>
+                <CardContent className='text-white'>
+                    {balanceData && aircraftReport && (
+                        <>
+                            <p>Receita Total: R$ {Number(balanceData.total_valor_area).toLocaleString()}</p>
+                            <p>Despesas Totais: R$ {Number(balanceData.total_despesas).toLocaleString()}</p>
+                            <p>Lucro Líquido: R$ {Number(balanceData.lucro_liquido).toLocaleString()}</p>
+                            <p>Total Gasto com Combustível: R$ {Number(balanceData.total_combustivel_gasto_na_area).toLocaleString()}</p>
+                            <p>Total Gasto com Óleo: R$ {Number(balanceData.total_oleo_gasto).toLocaleString()}</p>
+                        </>
+                    )}
+                </CardContent>
+            </Card>
 
 
-                {aircraftReport.nome_aeronave && <Card className="bg-[#556B2F]">
-                    <CardHeader>
-                        <CardTitle className='text-white'>Relatório da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
-                    </CardHeader>
-                    <CardContent className='text-white'>
-                        <p>Área Total Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
-                        <p>Área Total Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
-                        <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
-                        <p>Valor médio por alqueires: {aircraftReport.valor_medio_de_alqueires_total}</p>
-                        <p>Valor médio por hectares: {aircraftReport.valor_medio_de_hectares_total}</p>
-                        <p>Valor Médio por Hora de Voo: R$ {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
-                        <p>Valor Total Bruto: R$ {Number(aircraftReport.valor_total_bruto_recebido).toLocaleString()}</p>
-                        <p>Comissões de Pilotos: {aircraftReport.comissoes_de_pilotos}</p>
-                        <p>Comissões de Auxiliar de pista: {aircraftReport.comissoes_de_badeco}</p>
+            {aircraftReport.nome_aeronave && <Card className="bg-[#556B2F]">
+                <CardHeader>
+                    <CardTitle className='text-white'>Relatório da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
+                </CardHeader>
+                <CardContent className='text-white'>
+                    <p>Área Total Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
+                    <p>Área Total Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
+                    <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
+                    <p>Valor médio por alqueires: {aircraftReport.valor_medio_de_alqueires_total}</p>
+                    <p>Valor médio por hectares: {aircraftReport.valor_medio_de_hectares_total}</p>
+                    <p>Valor Médio por Hora de Voo: R$ {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
+                    <p>Valor Total Bruto: R$ {Number(aircraftReport.valor_total_bruto_recebido).toLocaleString()}</p>
+                    <p>Comissões de Pilotos: R$ {Number(aircraftReport.comissoes_de_pilotos).toLocaleString()}</p>
+                    <p>Comissões de Auxiliar de pista:R$ {Number(aircraftReport.comissoes_de_badeco).toLocaleString()}</p>
 
-                        <p>Despesa Total: R$ {
-                            (Number(aircraftReport.valor_total_bruto_recebido) -
-                                Number(aircraftReport.lucro_total)).toLocaleString()
-                        }</p>
-                        <p>Lucro Total: R$ {Number(aircraftReport.lucro_total).toLocaleString()}</p>
-                    </CardContent>
-                </Card>}
+                    <p>Despesa Total: R$ {
+                        (Number(aircraftReport.valor_total_bruto_recebido) -
+                            Number(aircraftReport.lucro_total)).toLocaleString()
+                    }</p>
+                    <p>Lucro Total: R$ {Number(aircraftReport.lucro_total).toLocaleString()}</p>
+                </CardContent>
+            </Card>}
 
 
-                <Card className="bg-[#556B2F]">
-                    <CardHeader>
-                        <CardTitle className='text-white'>Despesas por Categoria - Avião: {aircraftReport.nome_aeronave}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={expensesByType}>
-                                <XAxis dataKey="name" stroke="white" />
-                                <YAxis stroke="white" tickFormatter={formatYAxis} />
-                                <Tooltip
-                                    formatter={(value) => formatTooltipValue(Number(value))}
-                                    contentStyle={{ backgroundColor: '#4B5320', border: 'none' }}
-                                    labelStyle={{ color: 'white' }}
-                                />
-                                <Bar dataKey="value" fill="#8884d8">
-                                    {expensesByType.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
+            <Card className="bg-[#556B2F]">
+                <CardHeader>
+                    <CardTitle className='text-white'>Despesas por Categoria - Avião: {aircraftReport.nome_aeronave}</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={expensesByType}>
+                            <XAxis dataKey="name" stroke="white" />
+                            <YAxis stroke="white" tickFormatter={formatYAxis} />
+                            <Tooltip
+                                formatter={(value) => formatTooltipValue(Number(value))}
+                                contentStyle={{ backgroundColor: '#4B5320', border: 'none' }}
+                                labelStyle={{ color: 'white' }}
+                            />
+                            <Bar dataKey="value" fill="#8884d8">
+                                {expensesByType.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+        </div>
     )
 }
