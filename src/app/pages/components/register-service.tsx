@@ -55,13 +55,6 @@ const serviceSchema = z.object({
 
 type ServiceFormData = z.infer<typeof serviceSchema>
 
-type Safra = {
-  id: string;
-  dataInicio: string;
-  dataFinal: string;
-  label: string;
-}
-
 export function RegisterService() {
   const queryClient = useQueryClient()
   const { selectedSafra } = useContext(SafraContext);
@@ -447,7 +440,7 @@ export function RegisterService() {
               name="comissao_piloto"
               control={control}
               render={({ field }) => <Input disabled {...field} type='number' onChange={e => {
-                field.onChange(e.target.value)
+                field.onChange(parseFloat(e.target.value))
 
               }} />}
             />
@@ -496,7 +489,7 @@ export function RegisterService() {
               name="comissao_other"
               control={control}
               render={({ field }) => <Input disabled {...field} type='number' onChange={e => {
-                field.onChange(e.target.value)
+                field.onChange(parseFloat(e.target.value))
               }} />}
             />
             {errors.comissao_other && <p className="text-red-500 text-sm mt-1">{errors.comissao_other.message}</p>}
