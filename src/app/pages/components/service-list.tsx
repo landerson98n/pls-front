@@ -85,7 +85,7 @@ export function ServiceList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    
+
   })
 
 
@@ -97,7 +97,7 @@ export function ServiceList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    
+
   })
 
 
@@ -239,6 +239,17 @@ export function ServiceList() {
             </SelectContent>
           </Select>
         )
+      } else if (field === 'tipo_aplicacao_na_area') {
+        return <Select onValueChange={(value) => setEditingService(prev => prev ? { ...prev, [field]: value } : null)} value={editingService?.[field] || ''}>
+          <SelectTrigger id="tipo_aplicacao_na_area">
+            <SelectValue placeholder="Selecione o tipo de aplicação" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="semente">Semente</SelectItem>
+            <SelectItem value="liquido">Liquido</SelectItem>
+            <SelectItem value="nenhum">Nenhum</SelectItem>
+          </SelectContent>
+        </Select>
       } else {
         return (
           <Input
@@ -446,12 +457,16 @@ export function ServiceList() {
               </TableHead>
               <TableHead className='text-white'>
                 Tipo de Aplicação
-                <Input
-                  placeholder="Filtrar Tipo de Aplicação"
-                  value={filters.tipo_aplicacao_na_area || ''}
-                  onChange={(e) => handleFilterChange('tipo_aplicacao_na_area', e.target.value)}
-                  className="mt-1 w-30"
-                />
+                <Select onValueChange={(e) => handleFilterChange('tipo_aplicacao_na_area', e)} value={filters.tipo_aplicacao_na_area || ''}>
+                  <SelectTrigger id="tipo_aplicacao_na_area">
+                    <SelectValue placeholder="Selecione o tipo de aplicação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="semente">Semente</SelectItem>
+                    <SelectItem value="liquido">Liquido</SelectItem>
+                    <SelectItem value="nenhum">Nenhum</SelectItem>
+                  </SelectContent>
+                </Select>
               </TableHead>
               <TableHead className='text-white'>
                 Valor Total

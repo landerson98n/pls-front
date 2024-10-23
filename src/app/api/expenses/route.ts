@@ -24,8 +24,9 @@ export async function PUT(req) {
     try {
         const data = await req.json();
         const {
-            id, data: expenseDate, origem, tipo, descricao, porcentagem, valor, confirmacao_de_pagamento, funcionario_id
-        } = data;
+            data: expenseDate, origem, tipo, descricao, porcentagem, valor, confirmação_de_pagamento, funcionario_id
+        } = data.updatedData;
+        const id = data.id
 
         const updatedExpense = await prisma.expenses.update({
             where: { id: parseInt(id) },
@@ -36,7 +37,7 @@ export async function PUT(req) {
                 descricao,
                 porcentagem,
                 valor,
-                confirmacao_de_pagamento,
+                confirma__o_de_pagamento: confirmação_de_pagamento,
                 employee_id: funcionario_id,
             },
         });

@@ -16,7 +16,7 @@ import { aircraft, employees, services } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
 
 const baseSchema = z.object({
-  data: z.date({
+  data: z.string({
     required_error: "A data é obrigatória.",
   }),
   origem: z.enum(['Comissão do Funcionário', 'Despesa do Avião', 'Despesa do Veículo', 'Despesa Específica'], {
@@ -75,8 +75,8 @@ export function RegisterExpense() {
       data: '',
       employee_id: '0',
       porcentagem: 0,
-      service_id: '0'
-    },
+      service_id: '0',
+    }
   })
 
   const queryClient = useQueryClient();
@@ -136,6 +136,10 @@ export function RegisterExpense() {
     }
   }
 
+  if(errors){
+    console.log(errors);
+    
+  }
 
   return (
     <div className="p-6 bg-[#556B2F] rounded-lg shadow text-white">
@@ -247,7 +251,25 @@ export function RegisterExpense() {
               <Controller
                 name="tipo"
                 control={control}
-                render={({ field }) => <Input {...field} />}
+                render={({ field }) => (
+                  <Select {...field} onValueChange={field.onChange} value={field.value} name='tipo'>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Óleo">Óleo</SelectItem>
+                      <SelectItem value="Combustível">Combustível</SelectItem>
+                      <SelectItem value="Peças">Peças</SelectItem>
+                      <SelectItem value="Serviço">Serviço</SelectItem>
+                      <SelectItem value="Específica">Específica</SelectItem>
+                      <SelectItem value="Hangar">Hangar</SelectItem>
+                      <SelectItem value="Energia">Energia</SelectItem>
+                      <SelectItem value="Internet">Internet</SelectItem>
+                      <SelectItem value="Salário Funcionário">Salário Funcionário</SelectItem>
+                      <SelectItem value="Salário Mecânico">Salário Mecânico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               />
               {errors.tipo && <p className="text-red-500 text-sm">{errors.tipo.message}</p>}
             </div>

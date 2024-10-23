@@ -24,7 +24,7 @@ type Expense = {
   tipo?: string
   descricao?: string
   valor: number
-  confirma__o_de_pagamento: string
+  confirmação_de_pagamento: string
   aircraft_name?: string
   porcentagem?: number
   employee_name?: string
@@ -68,7 +68,7 @@ export function ExpenseList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    
+
   })
   const { data: vehicle, isLoading: vehicleLoad } = useQuery<expenses[]>({
     queryKey: ['expenses_vehicles'],
@@ -78,7 +78,7 @@ export function ExpenseList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    
+
   })
   const { data: commission, isLoading: commissionLoad } = useQuery<expenses[]>({
     queryKey: ['comissions'],
@@ -88,7 +88,7 @@ export function ExpenseList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    
+
   })
   const { data: aircraft, isLoading: aircraftLoad } = useQuery<expenses[]>({
     queryKey: ['expenses_aircraft'],
@@ -98,7 +98,7 @@ export function ExpenseList() {
     },
     enabled: !!selectedSafra,
     initialData: [],
-    
+
   })
 
   let filter = {
@@ -163,10 +163,12 @@ export function ExpenseList() {
 
   const handleSaveEdit = async () => {
     if (editingExpense) {
+      console.log(editingExpense);
+
       try {
         const response = await axios.put('/api/expenses', {
           id: editingExpense.id,
-          updatedData: { ...editingExpense, data: new Date(editingExpense.data) },
+          updatedData: { ...editingExpense, data: new Date(editingExpense.data), tipo: editingExpense.tipo },
         });
 
         if (response.status === 200) {
@@ -235,7 +237,7 @@ export function ExpenseList() {
     try {
       const response = await axios.put('/api/expenses/bulk-update', {
         ids: selectedExpenses,
-        field: 'confirma__o_de_pagamento',
+        field: 'confirmação_de_pagamento',
         value
       });
 
@@ -253,13 +255,23 @@ export function ExpenseList() {
   };
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setEditingExpense(prev => {
-      if (prev) {
-        return { ...prev, [name]: name === 'valor' || name === 'porcentagem' ? parseFloat(value) : value }
-      }
-      return null
-    })
+    if (!e.target) {
+      setEditingExpense(prev => {
+        if (prev) {
+          return { ...prev, ['tipo']: e }
+        }
+        return null
+      })
+    } else {
+      const { name, value } = e.target
+      setEditingExpense(prev => {
+        if (prev) {
+          return { ...prev, [name]: name === 'valor' || name === 'porcentagem' ? parseFloat(value) : value }
+        }
+        return null
+      })
+    }
+
   }
 
   const toggleRowExpansion = (id: number) => {
@@ -293,7 +305,7 @@ export function ExpenseList() {
               <p>Aeronave: {expense.aircraft_name}</p>
               <p>Piloto: {expense.employee_name}</p>
               <p>Valor: R$ {Number(expense.valor).toLocaleString()}</p>
-              <p>Pagamento: {expense.confirma__o_de_pagamento}</p>
+              <p>Pagamento: {expense.confirmação_de_pagamento}</p>
             </div>
             {expandedRows.includes(expense.id) && (
               <div className="mt-2 text-xs">
@@ -497,8 +509,8 @@ export function ExpenseList() {
               Pagamento
               <Input
                 placeholder="Filtrar Pagamento"
-                value={filters.confirma__o_de_pagamento || ''}
-                onChange={(e) => handleFilterChange('confirma__o_de_pagamento', e.target.value)}
+                value={filters.confirmação_de_pagamento || ''}
+                onChange={(e) => handleFilterChange('confirmação_de_pagamento', e.target.value)}
                 className="mt-1 w-30"
               />
             </TableHead>
@@ -506,6 +518,7 @@ export function ExpenseList() {
         </TableHeader>
         <TableBody>
           {expenses?.map((expense) => (
+
             <TableRow key={expense.id}>
               <TableCell>
                 <Checkbox
@@ -579,12 +592,23 @@ export function ExpenseList() {
               {activeTab !== 'commission' && activeTab !== 'specific' && (
                 <TableCell>
                   {editingId === expense.id ? (
-                    <Input
-                      name="tipo"
-                      value={editingExpense?.tipo || ''}
-                      onChange={handleEditInputChange}
-                      className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                    />
+                    <Select onValueChange={(e) => handleEditInputChange(e)} value={editingExpense?.tipo || ''} name='tipo'>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Óleo">Óleo</SelectItem>
+                        <SelectItem value="Combustível">Combustível</SelectItem>
+                        <SelectItem value="Peças">Peças</SelectItem>
+                        <SelectItem value="Serviço">Serviço</SelectItem>
+                        <SelectItem value="Específica">Específica</SelectItem>
+                        <SelectItem value="Hangar">Hangar</SelectItem>
+                        <SelectItem value="Energia">Energia</SelectItem>
+                        <SelectItem value="Internet">Internet</SelectItem>
+                        <SelectItem value="Salário Funcionário">Salário Funcionário</SelectItem>
+                        <SelectItem value="Salário Mecânico">Salário Mecânico</SelectItem>
+                      </SelectContent>
+                    </Select>
                   ) : (
                     expense.tipo
                   )}
@@ -618,9 +642,9 @@ export function ExpenseList() {
               <TableCell>
                 {editingId === expense.id ? (
                   <Select
-                    name="confirma__o_de_pagamento"
-                    value={editingExpense?.confirma__o_de_pagamento || ''}
-                    onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, confirma__o_de_pagamento: value } : null)}
+                    name="confirmação_de_pagamento"
+                    value={editingExpense?.confirmação_de_pagamento || ''}
+                    onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, confirmação_de_pagamento: value } : null)}
                   >
                     <SelectTrigger className="bg-[#556B2F] text-white border-[#8FBC8F]">
                       <SelectValue placeholder="Status de pagamento" />
@@ -631,7 +655,7 @@ export function ExpenseList() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  expense.confirma__o_de_pagamento
+                  expense.confirmação_de_pagamento
                 )}
               </TableCell>
             </TableRow>
@@ -671,7 +695,7 @@ export function ExpenseList() {
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
               {selectedExpenses.length > 0 && (
                 <>
-                  <Select onValueChange={(value) => handleBulkUpdate('confirma__o_de_pagamento', value)}>
+                  <Select onValueChange={(value) => handleBulkUpdate('confirmação_de_pagamento', value)}>
                     <SelectTrigger className="w-full sm:w-[180px] bg-[#556B2F] text-white border-[#8FBC8F]">
                       <SelectValue placeholder="Atualizar pagamento" />
                     </SelectTrigger>
