@@ -20,7 +20,7 @@ import InputMask from 'react-input-mask';
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { aircraft, employees } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
-
+import { useRouter } from 'next/navigation'
 const serviceSchema = z.object({
   data_inicio: z.string().nonempty('Data de início é obrigatória'),
   data_final: z.string().nonempty('Data final é obrigatória'),
@@ -56,6 +56,7 @@ const serviceSchema = z.object({
 type ServiceFormData = z.infer<typeof serviceSchema>
 
 export function RegisterService() {
+  const router = useRouter()
   const queryClient = useQueryClient()
   const { selectedSafra } = useContext(SafraContext);
   const { control, handleSubmit, formState: { errors }, reset, setValue, getValues } = useForm<ServiceFormData>({
@@ -65,12 +66,12 @@ export function RegisterService() {
       data_final: '',
       solicitante_da_area: '',
       nome_da_area: '',
-      tamanho_area_hectares: undefined,
+      tamanho_area_hectares: 0,
       tipo_aplicacao_na_area: '',
-      quantidade_no_hopper_por_voo: undefined,
+      quantidade_no_hopper_por_voo: 0,
       tipo_de_vazao: 0,
-      quantidade_de_voos_na_area: undefined,
-      valor_total_da_area: undefined,
+      quantidade_de_voos_na_area: 0,
+      valor_total_da_area: 0,
       confirmacao_de_pagamento_da_area: '',
       tempo_de_voo_gasto_na_area: '',
       aeronave_id: '',
@@ -110,7 +111,7 @@ export function RegisterService() {
     initialData: [],
   })
 
-  const onSubmit = (data: ServiceFormData) => {
+  const onSubmit = async (data: ServiceFormData) => {
     try {
       if (!selectedSafra.dataFinal) {
         toast({
@@ -126,20 +127,24 @@ export function RegisterService() {
       const token = JSON.parse(localStorage.getItem('token') || JSON.stringify(""))
       const time = data.tempo_de_voo_gasto_na_area.split(":")
       const hour = parseFloat(time[0]) + parseFloat(time[1]) / 60
-      const resp = axios.post('/api/services', {
+      const resp = await axios.post('/api/services', {
         ...data,
         data_inicio: data_inicio_completa,
         data_final: data_final_completa,
         criado_por: token?.user?.id || 1,
         tempo_de_voo_gasto_na_area: hour
       })
+      if (resp.status === 201) {
+        toast({
+          title: "Serviço cadastrado",
+          description: `O serviço foi cadastrada com sucesso!`,
+        })
+        reset()
+        router.push('register')
+        queryClient.refetchQueries()
+      }
 
-      toast({
-        title: "Serviço cadastrado",
-        description: `O serviço foi cadastrada com sucesso!`,
-      })
-      reset()
-      queryClient.refetchQueries()
+
     } catch (error) {
       console.log(error);
 
