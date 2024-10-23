@@ -48,8 +48,8 @@ const serviceSchema = z.object({
   lucro_por_area: z.number().positive('Tamanho da área deve ser positivo'),
   percentual_de_lucro_liquido_por_area: z.number().positive('Tamanho da área deve ser positivo'),
   other_id: z.string().optional(),
-  porcentagem_comissao_other: z.number().positive().optional(),
-  comissao_other: z.number().positive().optional(),
+  porcentagem_comissao_other: z.number().optional(),
+  comissao_other: z.number().optional(),
   confirmacao_de_pagamento_other: z.string().optional()
 })
 

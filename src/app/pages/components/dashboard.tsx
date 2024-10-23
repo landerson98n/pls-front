@@ -14,7 +14,6 @@ import { useRouter } from 'next/navigation'
 
 export function DashboardPage({ children }) {
   const { selectedSafra } = useContext(SafraContext);
-  
   const router = useRouter()
   const [selectedAircraft, setSelectedAircraft] = useState("")
   const [selectedAircraftId, setSelectedAircraftId] = useState("")
