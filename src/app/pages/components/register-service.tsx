@@ -129,8 +129,8 @@ export function RegisterService() {
       const hour = parseFloat(time[0]) + parseFloat(time[1]) / 60
       const resp = await axios.post('/api/services', {
         ...data,
-        data_inicio: data_inicio_completa,
-        data_final: data_final_completa,
+        data_inicio: new Date(data_inicio_completa),
+        data_final: new Date(data_final_completa),
         criado_por: token?.user?.id || 1,
         tempo_de_voo_gasto_na_area: hour
       })
@@ -143,8 +143,6 @@ export function RegisterService() {
         router.push('register')
         queryClient.refetchQueries()
       }
-
-
     } catch (error) {
       console.log(error);
 
