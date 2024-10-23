@@ -303,6 +303,7 @@ export function ServiceList() {
               </div>
             )}
             <div className="mt-2 flex space-x-2">
+
               <Button variant="outline" size="sm" onClick={() => handleDeleteService(service.id)}>
                 <Trash2 className="h-4 w-4  text-black" />
               </Button>

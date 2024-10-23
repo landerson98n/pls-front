@@ -10,7 +10,6 @@ export async function GET() {
             }
         });
 
-
         const serviceData = await Promise.all(services.map(async (service) => {
             const user = await prisma.users.findFirst({
                 where: {
@@ -51,6 +50,7 @@ export async function GET() {
         return NextResponse.json({ error: `Erro ao buscar serviços ${error}` }, { status: 500 });
     }
 }
+
 
 export async function POST(req) {
 
@@ -122,7 +122,6 @@ export async function POST(req) {
                 confirma__o_de_pagamento: confirmacao_de_pagamento_do_piloto
             }
         });
-        console.log(porcentagem_comissao_other);
         
         if (porcentagem_comissao_other) {
             await prisma.expenses.create({

@@ -224,7 +224,7 @@ export function RegisterService() {
             <Controller
               name="valor_total_da_area"
               control={control}
-              render={({ field }) => <Input type="number" {...field}
+              render={({ field }) => <Input type="number" step="any"  {...field}
                 onChange={e => {
                   field.onChange(parseFloat(e.target.value))
                   setValue('valor_por_hectare', field.value / getValues('tamanho_area_hectares'))
@@ -329,7 +329,7 @@ export function RegisterService() {
               name="tipo_de_vazao"
               control={control}
               render={({ field }) => <Input type='number' {...field} onChange={e => {
-                field.onChange(Number(e.target.value))
+                field.onChange(e.target.value)
               }} />}
             />
             {errors.tipo_de_vazao && <p className="text-red-500 text-sm mt-1">{errors.tipo_de_vazao.message}</p>}
@@ -421,7 +421,7 @@ export function RegisterService() {
               name="porcentagem_comissao"
               control={control}
               render={({ field }) => <Input {...field} type='number' onChange={e => {
-                field.onChange(parseInt(e.target.value))
+                field.onChange(e.target.value)
                 setValue('comissao_piloto', getValues('porcentagem_comissao') * getValues('valor_total_da_area') / 100)
                 setValue('lucro_por_area', getValues('valor_total_da_area') - getValues('porcentagem_comissao') * getValues('valor_total_da_area') / 100)
                 setValue('percentual_de_lucro_liquido_por_area', getValues('lucro_por_area') * 100 / getValues('valor_total_da_area'))
@@ -469,7 +469,7 @@ export function RegisterService() {
               name="porcentagem_comissao_other"
               control={control}
               render={({ field }) => <Input {...field} type='number' onChange={e => {
-                field.onChange(parseInt(e.target.value))
+                field.onChange(e.target.value)
                 setValue('comissao_other', (getValues('porcentagem_comissao_other') || 0) * getValues('valor_total_da_area') / 100)
                 setValue('lucro_por_area', getValues('valor_total_da_area') - (getValues('porcentagem_comissao_other') || 0)* getValues('valor_total_da_area') / 100)
                 setValue('percentual_de_lucro_liquido_por_area', getValues('lucro_por_area') * 100 / getValues('valor_total_da_area'))
