@@ -138,6 +138,7 @@ export function RegisterService() {
         title: "Serviço cadastrado",
         description: `O serviço foi cadastrada com sucesso!`,
       })
+      reset()
       queryClient.refetchQueries()
     } catch (error) {
       console.log(error);
