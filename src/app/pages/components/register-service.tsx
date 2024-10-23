@@ -378,7 +378,7 @@ export function RegisterService() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {aeronaves()?.map((aeronave) => (
+                    {aeronaves?.map((aeronave) => (
                       <SelectItem key={aeronave.id} value={aeronave.id.toString()}>{aeronave.registration} - {aeronave.brand} - {aeronave.model}</SelectItem>
                     ))}
                   </SelectContent>
@@ -399,7 +399,7 @@ export function RegisterService() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {employees()?.map((employee) => (
+                    {employees?.map((employee) => (
                       employee.role === 'Piloto' && <SelectItem key={employee.id} value={employee.id.toString()}>{employee.name} - {employee.role}</SelectItem>
                     ))}
                   </SelectContent>
@@ -466,7 +466,7 @@ export function RegisterService() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {employees()?.map((employee) => (
+                    {employees?.map((employee) => (
                       employee.role !== 'Piloto' && <SelectItem key={employee.id} value={employee.id.toString()}>{employee.name} - {employee.role}</SelectItem>
                     ))}
                   </SelectContent>
