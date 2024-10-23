@@ -97,13 +97,25 @@ export function RegisterService() {
       confirmacao_de_pagamento_other: ''
     }
   })
-  const aeronaves = () => {
-    return queryClient.getQueryData<aircraft[]>(['aircrafts']) || []
-  }
+  const { data: aeronaves, isLoading: aircraftsLoad } = useQuery<aircraft[]>({
+    queryKey: ['aircrafts'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/aircraft/`);
+      return response.data as aircraft[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+  })
 
-  const employees = () => {
-    return queryClient.getQueryData<employees[]>(['employees']) || []
-  }
+  const { data: employees, isLoading: employeesLoad } = useQuery<employees[]>({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/employees/`);
+      return response.data as employees[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+  })
 
   const onSubmit = (data: ServiceFormData) => {
     try {
@@ -133,7 +145,7 @@ export function RegisterService() {
         title: "Serviço cadastrado",
         description: `O serviço foi cadastrada com sucesso!`,
       })
-      reset()
+      queryClient.refetchQueries()
     } catch (error) {
       console.log(error);
 
@@ -471,7 +483,7 @@ export function RegisterService() {
               render={({ field }) => <Input {...field} type='number' onChange={e => {
                 field.onChange(parseFloat(e.target.value))
                 setValue('comissao_other', (getValues('porcentagem_comissao_other') || 0) * getValues('valor_total_da_area') / 100)
-                setValue('lucro_por_area', getValues('valor_total_da_area') - (getValues('porcentagem_comissao_other') || 0)* getValues('valor_total_da_area') / 100)
+                setValue('lucro_por_area', getValues('valor_total_da_area') - (getValues('porcentagem_comissao_other') || 0) * getValues('valor_total_da_area') / 100)
                 setValue('percentual_de_lucro_liquido_por_area', getValues('lucro_por_area') * 100 / getValues('valor_total_da_area'))
               }} />}
             />
