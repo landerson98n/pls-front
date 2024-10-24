@@ -17,6 +17,7 @@ import { format } from 'date-fns'
 import { expenses, services } from '@prisma/client'
 import { useQuery } from '@tanstack/react-query'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
+import SkeletonTableRow from './skeleton-table-row'
 
 type Service = {
   id: number
@@ -60,7 +61,7 @@ export function ServiceList() {
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
 
-  const { data: services, isLoading: servicesLoad, refetch: refetchServices } = useQuery<services[]>({
+  const { data: services, isLoading: servicesLoad, refetch: refetchServices, isFetching } = useQuery<services[]>({
     queryKey: ['services', currentPage, filters, selectedSafra, itemsPerPage],
     queryFn: async () => {
       const response = await axios.get(`/api/services/${indexOfFirstItem}/${indexOfLastItem}`,
@@ -351,8 +352,8 @@ export function ServiceList() {
       </div>
 
       <div className="max-md:hidden overflow-x-auto">
-        <Table>
-          <TableHeader>
+        <Table className='min-h-[calc(30vh)]'>
+          <TableHeader >
             <TableRow>
               <TableHead className="w-[50px]">
                 <Checkbox
@@ -569,8 +570,8 @@ export function ServiceList() {
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {currentItems?.map((service) => (
+          <TableBody >
+            {!isFetching ? currentItems?.map((service) => (
               <TableRow key={service.id}>
                 <TableCell>
                   <Checkbox
@@ -683,7 +684,12 @@ export function ServiceList() {
                 <TableCell>{renderEditableCell(service, 'percentual_de_lucro_liquido_por_area')}</TableCell>
                 <TableCell>{service.criado_por}</TableCell>
               </TableRow>
-            ))}
+            )) : <>
+              <SkeletonTableRow columns={22} />
+              <SkeletonTableRow columns={22} />
+              <SkeletonTableRow columns={22} />
+              <SkeletonTableRow columns={22} />
+            </>}
           </TableBody>
         </Table>
       </div>

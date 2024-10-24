@@ -42,7 +42,6 @@ const expenseTypes = [
 export function ExpenseList() {
   const queryClient = useQueryClient();
   const { selectedSafra } = useContext(SafraContext);
-
   const [activeTab, setActiveTab] = useState('aircraft')
   const [selectedExpenses, setSelectedExpenses] = useState<number[]>([])
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -55,7 +54,7 @@ export function ExpenseList() {
   const [filters, setFilters] = useState<{ [key in keyof Expense]?: string }>({})
 
   const { data: specific, isLoading: specificLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_specific'],
+    queryKey: ['expenses_specific', activeTab['specific']],
     queryFn: async () => {
       const response = await axios.get(`/api/expenses_specific/`);
       return response.data as expenses[]
@@ -65,7 +64,7 @@ export function ExpenseList() {
 
   })
   const { data: vehicle, isLoading: vehicleLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_vehicles'],
+    queryKey: ['expenses_vehicles', activeTab['vehicle']],
     queryFn: async () => {
       const response = await axios.get(`/api/expenses_vehicles/`);
       return response.data as expenses[]
@@ -75,7 +74,7 @@ export function ExpenseList() {
 
   })
   const { data: commission, isLoading: commissionLoad } = useQuery<expenses[]>({
-    queryKey: ['comissions'],
+    queryKey: ['comissions', activeTab['commission']],
     queryFn: async () => {
       const response = await axios.get(`/api/comissions/`);
       return response.data as expenses[]
@@ -85,12 +84,11 @@ export function ExpenseList() {
 
   })
   const { data: aircraft, isLoading: aircraftLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_aircraft'],
+    queryKey: ['expenses_aircraft', activeTab['aircraft']],
     queryFn: async () => {
       const response = await axios.get(`/api/expenses_aircraft/`);
       return response.data as expenses[]
     },
-    enabled: !!selectedSafra,
     initialData: [],
 
   })
@@ -110,7 +108,7 @@ export function ExpenseList() {
       'specific': specific
     }
   }
-  const filteredExpenses = filter && filter[activeTab]?.filter(expense => {
+  const filteredExpenses = filter[activeTab] && filter[activeTab]?.filter(expense => {
     if (!expense) {
       return null
     }
