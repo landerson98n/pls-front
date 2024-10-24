@@ -1,5 +1,6 @@
 'use client'
-import React, { useContext, useEffect, useState } from 'react'
+
+import React, { useContext } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -21,6 +22,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { aircraft, employees } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
 import { useRouter } from 'next/navigation'
+
 const serviceSchema = z.object({
   data_inicio: z.string().nonempty('Data de início é obrigatória'),
   data_final: z.string().nonempty('Data final é obrigatória'),
@@ -91,6 +93,7 @@ export function RegisterService() {
       confirmacao_de_pagamento_other: ''
     }
   })
+
   const { data: aeronaves, isLoading: aircraftsLoad } = useQuery<aircraft[]>({
     queryKey: ['aircrafts'],
     queryFn: async () => {
@@ -112,13 +115,8 @@ export function RegisterService() {
   })
 
   function corrigirData(dataString) {
-    // Divide a string pelo separador "/"
     const [dia, mes, ano] = dataString.split('/');
-
-    // Reorganiza a data no formato "YYYY-MM-DD"
     const dataFormatada = `${ano}-${mes}-${dia}`;
-
-    // Retorna o objeto Date
     return new Date(dataFormatada);
   }
 
@@ -141,9 +139,9 @@ export function RegisterService() {
       const resp = await axios.post('/api/services', {
         ...data,
         data_inicio: new Date(corrigirData(data_inicio_completa)),
-          data_final: new Date(corrigirData(data_final_completa)),
-            criado_por: token?.user?.id || 1,
-            tempo_de_voo_gasto_na_area: hour
+        data_final: new Date(corrigirData(data_final_completa)),
+        criado_por: token?.user?.id || 1,
+        tempo_de_voo_gasto_na_area: hour
       })
       if (resp.status === 201) {
         toast({

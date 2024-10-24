@@ -1,8 +1,118 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { format } from 'date-fns'
+
+type Service = {
+    id: number
+    data_inicio: string
+    data_final: string | null
+    solicitante_da_area: string
+    nome_da_area: string
+    tamanho_area_hectares: number
+    tamanho_area_alqueires: number
+    tipo_aplicacao_na_area: string
+    quantidade_no_hopper_por_voo: number
+    tipo_de_vazao: string
+    quantidade_de_voos_na_area: number
+    valor_por_alqueire: number
+    valor_por_hectare: number
+    valor_medio_por_hora_de_voo: number
+    valor_total_da_area: number
+    confirmacao_de_pagamento_da_area: string
+    tempo_de_voo_gasto_na_area: string
+    aeronave_id: number
+    aeronave_data: string
+    employee_id: number
+    employee_data: string
+    lucro_por_area: number
+    percentual_de_lucro_liquido_por_area: number
+    criado_em: string
+    criado_por: string
+}
 
 export async function GET(req, { params }) {
     const { start, end } = params;
+    const { searchParams } = new URL(req.url);
+    const filtersJson = searchParams.get('dados')
+    const dataFilter: { [key in keyof Service]?: string } = await JSON.parse(filtersJson || '')
+
+    const whereClause: any = {
+        criado_em: {
+            gte: new Date(searchParams.get('inicio')?.toString() || ''),
+            lte: new Date(searchParams.get('fim')?.toString() || ''),
+        }
+    };
+
+    Object.entries(dataFilter).forEach(([key, value]) => {
+        if (key === 'id' ||
+            key === 'tamanho_area_hectares' ||
+            key === 'tamanho_area_alqueires' ||
+            key === 'quantidade_no_hopper_por_voo' ||
+            key === 'quantidade_de_voos_na_area' ||
+            key === 'valor_por_alqueire' ||
+            key === 'valor_por_hectare' ||
+            key === 'valor_medio_por_hora_de_voo' ||
+            key === 'valor_total_da_area' ||
+            key === 'aeronave_id' ||
+            key === 'employee_id' ||
+            key === 'lucro_por_area' ||
+            key === 'percentual_de_lucro_liquido_por_area' ||
+            key === 'tipo_de_vazao' ||
+            key === 'data_final' ||
+            key === 'data_inicio'
+        ) {
+            null
+        }
+        else if (key === 'employee_data' && value && value !== '') {
+            whereClause['employees'] = {
+
+                name: {
+                    contains: value
+                }
+
+            }
+        }
+        else if (key === 'criado_por' && value && value !== '') {
+            whereClause['users'] = {
+
+                name: {
+                    contains: value
+                }
+
+            }
+        }
+        else if (key === 'aeronave_data' && value && value !== '') {
+            whereClause['aircraft'] = {
+
+                OR: [
+                    {
+                        model: {
+                            contains: value
+                        }
+                    },
+                    {
+                        brand:
+                        {
+                            contains: value
+                        }
+                    },
+                    {
+                        registration: {
+                            contains: value
+                        }
+                    }
+                ]
+
+            }
+        }
+        else {
+            if (value && value !== '') {
+                whereClause[key] = { contains: value }
+            }
+        }
+
+    });
+
     try {
         const services = await prisma.services.findMany({
             include: {
@@ -10,10 +120,42 @@ export async function GET(req, { params }) {
                 employees: true,
             },
             skip: Number(start),
-            take: end - start
+            take: Number(end - start),
+            where: whereClause
         });
 
-        const serviceData = await Promise.all(services.map(async (service) => {
+
+        const filteredServices = services.filter(service => {
+            return Object.entries(dataFilter).every(([key, value]) => {
+                if (key === 'id' ||
+                    key === 'tamanho_area_hectares' ||
+                    key === 'tamanho_area_alqueires' ||
+                    key === 'quantidade_no_hopper_por_voo' ||
+                    key === 'quantidade_de_voos_na_area' ||
+                    key === 'valor_por_alqueire' ||
+                    key === 'valor_por_hectare' ||
+                    key === 'valor_medio_por_hora_de_voo' ||
+                    key === 'valor_total_da_area' ||
+                    key === 'aeronave_id' ||
+                    key === 'employee_id' ||
+                    key === 'lucro_por_area' ||
+                    key === 'percentual_de_lucro_liquido_por_area' ||
+                    key === 'tipo_de_vazao' ||
+                    key === 'data_final' ||
+                    key === 'data_inicio'
+                ) {
+                    if (key === 'data_final' || key === 'data_inicio') {
+                        return format(`${service[key]}`, 'dd / MM / yyyy').toString().toLowerCase().includes(value.toString().toLowerCase())
+                    } else {
+                        return service[key].toString().toLowerCase().includes(value.toString().toLowerCase());
+                    }
+                }
+
+                return true;
+            });
+        });
+
+        const serviceData = await Promise.all(filteredServices.map(async (service) => {
             const user = await prisma.users.findFirst({
                 where: {
                     id: service.criado_por

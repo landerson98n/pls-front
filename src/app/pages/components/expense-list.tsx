@@ -1,22 +1,22 @@
 'use client'
 
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Edit, Save, Trash2, X, ChevronDown, ChevronUp, Filter, ChevronLeft, ChevronsLeft, ChevronRight, ChevronsRight } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Edit, Save, Trash2, X, ChevronDown, ChevronUp, ChevronLeft, ChevronsLeft, ChevronRight, ChevronsRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
 import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { expenses } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
+
 type Expense = {
   id: number
   data: Date
@@ -38,12 +38,6 @@ const expenseTypes = [
   { key: 'specific', label: 'Específicas' },
 ]
 
-type Safra = {
-  id: string;
-  dataInicio: string;
-  dataFinal: string;
-  label: string;
-}
 
 export function ExpenseList() {
   const queryClient = useQueryClient();
@@ -163,8 +157,6 @@ export function ExpenseList() {
 
   const handleSaveEdit = async () => {
     if (editingExpense) {
-      console.log(editingExpense);
-
       try {
         const response = await axios.put('/api/expenses', {
           id: editingExpense.id,

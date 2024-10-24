@@ -57,19 +57,25 @@ export function ServiceList() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [filters, setFilters] = useState<{ [key in keyof Service]?: string }>({})
-
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
 
   const { data: services, isLoading: servicesLoad, refetch: refetchServices } = useQuery<services[]>({
-    queryKey: ['services'],
+    queryKey: ['services', currentPage, filters, selectedSafra, itemsPerPage],
     queryFn: async () => {
-      const response = await axios.get(`/api/services/`);
+      const response = await axios.get(`/api/services/${indexOfFirstItem}/${indexOfLastItem}`,
+        {
+          params: {
+            inicio: new Date(selectedSafra.dataInicio),
+            fim: new Date(selectedSafra.dataFinal),
+            dados: JSON.stringify(filters)
+          }
+        }
+      );
       return response.data as services[]
     },
-    enabled: !!selectedSafra,
-    initialData: [],
-
+    initialData: []
   })
-
 
   const { data: expenses, isLoading: expensesLoad } = useQuery<expenses[]>({
     queryKey: ['expenses'],
@@ -84,23 +90,15 @@ export function ServiceList() {
 
 
   const filteredServices = services.filter(service => {
-    const serviceDate = new Date(service.criado_em)
-    const safraStartDate = new Date(selectedSafra.dataInicio)
-    const safraEndDate = new Date(selectedSafra.dataFinal)
-
-    const isWithinSafraDates = !selectedSafra ||
-      (serviceDate >= safraStartDate && serviceDate <= safraEndDate)
-
-    return isWithinSafraDates && Object.entries(filters).every(([key, value]) => {
+    return Object.entries(filters).every(([key, value]) => {
       if (!value) return true
       const serviceValue = service[key as keyof Service]?.toString()
       return typeof serviceValue === 'string' && serviceValue.toLowerCase().includes(value.toLowerCase().toString())
     })
   })
 
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredServices.slice(indexOfFirstItem, indexOfLastItem)
+  const currentItems = filteredServices
+
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -703,8 +701,6 @@ export function ServiceList() {
             <SelectContent>
               <SelectItem value="5">5</SelectItem>
               <SelectItem value="10">10</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -726,24 +722,17 @@ export function ServiceList() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="flex items-center px-2">
-            Página {currentPage} de {Math.ceil(filteredServices.length / itemsPerPage)}
+            Página {currentPage}
           </span>
           <Button
             className='text-black'
             variant="outline"
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredServices.length / itemsPerPage)))}
-            disabled={currentPage === Math.ceil(filteredServices.length / itemsPerPage)}
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={services.length < itemsPerPage ? true : false}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button
-            className='text-black'
-            variant="outline"
-            onClick={() => setCurrentPage(Math.ceil(filteredServices.length / itemsPerPage))}
-            disabled={currentPage === Math.ceil(filteredServices.length / itemsPerPage)}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
+
         </div>
       </div>
     </div>

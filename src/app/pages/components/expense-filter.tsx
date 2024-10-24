@@ -1,5 +1,6 @@
 'use client'
-import React, { useContext, useEffect, useState } from 'react'
+
+import React, { useContext } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -119,13 +120,8 @@ export function RegisterExpense() {
 
 
   function corrigirData(dataString) {
-    // Divide a string pelo separador "/"
     const [dia, mes, ano] = dataString.split('/');
-
-    // Reorganiza a data no formato "YYYY-MM-DD"
     const dataFormatada = `${ano}-${mes}-${dia}`;
-
-    // Retorna o objeto Date
     return new Date(dataFormatada);
   }
 

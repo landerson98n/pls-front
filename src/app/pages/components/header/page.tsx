@@ -12,20 +12,20 @@ import { useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function Header() {
-
+    const { selectedSafra, setSelectedSafra } = useContext(SafraContext)
     const route = useRouter()
+
     const { data: safras, isLoading: safrasLoad } = useQuery<safras[]>({
         queryKey: ['safras'],
         queryFn: async () => {
             const response = await axios.get(`/api/safras/`);
-            setSelectedSafra(response.data[0])
+            setSelectedSafra(selectedSafra.id ? selectedSafra : response.data[0])
             return response.data as safras[]
         },
         initialData: [],
-        refetchInterval: 50000
     })
+    
     const [activeComponent, setActiveComponent] = useState('dashboard')
-    const { selectedSafra, setSelectedSafra } = useContext(SafraContext)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     const navItems = [
