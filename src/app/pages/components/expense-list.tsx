@@ -64,14 +64,12 @@ export function ExpenseList() {
 
   })
   const { data: vehicle, isLoading: vehicleLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_vehicles', activeTab['vehicle']],
+    queryKey: ['expenses_vehicles'],
     queryFn: async () => {
       const response = await axios.get(`/api/expenses_vehicles/`);
       return response.data as expenses[]
     },
-    enabled: !!selectedSafra,
     initialData: [],
-
   })
   const { data: commission, isLoading: commissionLoad } = useQuery<expenses[]>({
     queryKey: ['comissions', activeTab['commission']],
@@ -108,7 +106,7 @@ export function ExpenseList() {
       'specific': specific
     }
   }
-  const filteredExpenses = filter[activeTab] && filter[activeTab]?.filter(expense => {
+  const filteredExpenses = filter[activeTab].length > 0 && filter[activeTab]?.filter(expense => {
     if (!expense) {
       return null
     }
@@ -128,7 +126,7 @@ export function ExpenseList() {
 
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredExpenses?.slice(indexOfFirstItem, indexOfLastItem)
+  const currentItems =filteredExpenses.length > 0 && filteredExpenses?.slice(indexOfFirstItem, indexOfLastItem)
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 

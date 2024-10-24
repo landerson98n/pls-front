@@ -91,9 +91,7 @@ export function RegisterExpense() {
       const response = await axios.get(`/api/aircraft/`);
       return response.data as aircraft[]
     },
-    enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
   })
 
   const { data: funcionario, isLoading: employeesLoad } = useQuery<employees[]>({
@@ -102,9 +100,7 @@ export function RegisterExpense() {
       const response = await axios.get(`/api/employees/`);
       return response.data as employees[]
     },
-    enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
   })
 
   const { data: servicos, isLoading: servicesLoad } = useQuery<services[]>({
@@ -113,9 +109,7 @@ export function RegisterExpense() {
       const response = await axios.get(`/api/services/`);
       return response.data as services[]
     },
-    enabled: !!selectedSafra,
     initialData: [],
-    refetchInterval: 5000
   })
 
 
