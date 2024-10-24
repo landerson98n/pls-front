@@ -646,7 +646,7 @@ export function ExpenseList() {
   return (
     <div className="p-4 sm:p-6 bg-[#556B2F] text-white rounded-lg shadow">
       <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Lista de Despesas</h2>
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(e) => { setActiveTab(e); setCurrentPage(1) }}>
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-4 max-md:h-28 h-16">
           {expenseTypes.map((type) => (
             <TabsTrigger key={type.key} value={type.key} className="text-white bg-[#556B2F] my-2 mx-2">
