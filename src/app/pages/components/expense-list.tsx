@@ -16,7 +16,6 @@ import { format } from 'date-fns'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { expenses } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
-
 type Expense = {
   id: number
   data: Date
@@ -126,7 +125,7 @@ export function ExpenseList() {
 
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems =filteredExpenses.length > 0 && filteredExpenses?.slice(indexOfFirstItem, indexOfLastItem)
+  const currentItems = filteredExpenses.length > 0 && filteredExpenses?.slice(indexOfFirstItem, indexOfLastItem)
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
 
@@ -562,7 +561,17 @@ export function ExpenseList() {
                 </>
               )}
               <TableCell>
-                {format(expense.data, "dd/MM/yyyy")}
+                {editingId === expense.id ? (
+                  <Input
+                    name="data"
+                    value={editingExpense?.data?.toLocaleString() || ''}
+                    onChange={handleEditInputChange}
+                    type='date'
+                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                  />
+                ) : (
+                  format(expense.data, "dd/MM/yyyy")
+                )}
               </TableCell>
               <TableCell>{expense.origem}</TableCell>
               {activeTab !== 'commission' && activeTab !== 'specific' && (
