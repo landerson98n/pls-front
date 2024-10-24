@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -15,7 +15,7 @@ import InputMask from 'react-input-mask';
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { aircraft, employees, services } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
-import {format} from 'date-fns'
+import { format } from 'date-fns'
 
 const baseSchema = z.object({
   data: z.string({
@@ -112,6 +112,7 @@ export function RegisterExpense() {
     initialData: [],
   })
 
+  const [ano, setAno] = useState(format(selectedSafra.dataFinal, 'yyyy'))
 
   function corrigirData(dataString) {
     const [dia, mes, ano] = dataString.split('/');
@@ -121,8 +122,7 @@ export function RegisterExpense() {
 
   const onSubmit = async (dataExpense: ExpenseFormData) => {
     try {
-      const year = format(selectedSafra.dataFinal, 'yyyy');
-      const resp = await axios.post('/api/expenses',{ ...dataExpense, data: new Date(corrigirData(`${dataExpense.data}/${year}`)) })
+      const resp = await axios.post('/api/expenses', { ...dataExpense, data: new Date(corrigirData(`${dataExpense.data}/${ano}`)) })
       toast({
         title: "Despesa cadastrada",
         description: `A despesa foi cadastrada com sucesso!`,
@@ -161,6 +161,20 @@ export function RegisterExpense() {
               )}
             />
             {errors.data && <p className="text-red-500 text-sm">{errors.data.message}</p>}
+
+
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="data " className='text-white'>Ano</Label>
+            <Select onValueChange={setAno} value={ano}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o ano"/>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem  value={format(selectedSafra.dataInicio, 'yyyy')}>{format(selectedSafra.dataInicio, 'yyyy')}</SelectItem>
+                <SelectItem value={format(selectedSafra.dataFinal, 'yyyy')}>{format(selectedSafra.dataFinal, 'yyyy')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="origem">Origem da despesa</Label>

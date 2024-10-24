@@ -54,7 +54,7 @@ export function ExpenseList() {
   const [filters, setFilters] = useState<{ [key in keyof Expense]?: string }>({})
 
   const { data: specific, isLoading: specificLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_specific', activeTab['specific']],
+    queryKey: ['expenses_specific'],
     queryFn: async () => {
       const response = await axios.get(`/api/expenses_specific/`);
       return response.data as expenses[]
@@ -72,7 +72,7 @@ export function ExpenseList() {
     initialData: [],
   })
   const { data: commission, isLoading: commissionLoad } = useQuery<expenses[]>({
-    queryKey: ['comissions', activeTab['commission']],
+    queryKey: ['comissions'],
     queryFn: async () => {
       const response = await axios.get(`/api/comissions/`);
       return response.data as expenses[]
@@ -82,7 +82,7 @@ export function ExpenseList() {
 
   })
   const { data: aircraft, isLoading: aircraftLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_aircraft', activeTab['aircraft']],
+    queryKey: ['expenses_aircraft'],
     queryFn: async () => {
       const response = await axios.get(`/api/expenses_aircraft/`);
       return response.data as expenses[]
