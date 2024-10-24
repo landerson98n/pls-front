@@ -574,16 +574,7 @@ export function ExpenseList() {
                 </>
               )}
               <TableCell>
-                {editingId === expense.id ? (
-                  <Input
-                    name="data"
-                    value={editingExpense?.data || ''}
-                    onChange={handleEditInputChange}
-                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
-                  />
-                ) : (
-                  format(expense.data, "dd-MM-yyyy")
-                )}
+                {format(expense.data, "dd/MM/yyyy")}
               </TableCell>
               <TableCell>{expense.origem}</TableCell>
               {activeTab !== 'commission' && activeTab !== 'specific' && (
