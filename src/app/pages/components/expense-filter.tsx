@@ -14,6 +14,7 @@ import InputMask from 'react-input-mask';
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { aircraft, employees, services } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
+import {format} from 'date-fns'
 
 const baseSchema = z.object({
   data: z.string({
@@ -117,9 +118,21 @@ export function RegisterExpense() {
   })
 
 
-  const onSubmit = async (data: ExpenseFormData) => {
+  function corrigirData(dataString) {
+    // Divide a string pelo separador "/"
+    const [dia, mes, ano] = dataString.split('/');
+
+    // Reorganiza a data no formato "YYYY-MM-DD"
+    const dataFormatada = `${ano}-${mes}-${dia}`;
+
+    // Retorna o objeto Date
+    return new Date(dataFormatada);
+  }
+
+  const onSubmit = async (dataExpense: ExpenseFormData) => {
     try {
-      const resp = await axios.post('/api/expenses', data)
+      const year = format(selectedSafra.dataFinal, 'yyyy');
+      const resp = await axios.post('/api/expenses',{ ...dataExpense, data: new Date(corrigirData(`${dataExpense.data}/${year}`)) })
       toast({
         title: "Despesa cadastrada",
         description: `A despesa foi cadastrada com sucesso!`,
@@ -136,9 +149,9 @@ export function RegisterExpense() {
     }
   }
 
-  if(errors){
+  if (errors) {
     console.log(errors);
-    
+
   }
 
   return (
