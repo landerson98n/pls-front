@@ -16,6 +16,7 @@ import { format } from 'date-fns'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { expenses } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
+import SkeletonTableRow from './skeleton-table-row'
 type Expense = {
   id: number
   data: Date
@@ -52,38 +53,67 @@ export function ExpenseList() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [filters, setFilters] = useState<{ [key in keyof Expense]?: string }>({})
 
-  const { data: specific, isLoading: specificLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_specific'],
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+
+  const { data: specific, isLoading: specificLoad, isFetching: specificFetch } = useQuery<expenses[]>({
+    queryKey: ['expenses_specific', selectedSafra, currentPage, itemsPerPage, filters],
     queryFn: async () => {
-      const response = await axios.get(`/api/expenses_specific/`);
+      const response = await axios.get(`/api/expenses_specific/${indexOfFirstItem}/${indexOfLastItem}`, {
+        params: {
+          inicio: new Date(selectedSafra.dataInicio),
+          fim: new Date(selectedSafra.dataFinal),
+          dados: JSON.stringify(filters)
+        }
+      });
       return response.data as expenses[]
     },
     enabled: !!selectedSafra,
     initialData: [],
 
   })
-  const { data: vehicle, isLoading: vehicleLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_vehicles'],
+  const { data: vehicle, isLoading: vehicleLoad, isFetching } = useQuery<expenses[]>({
+    queryKey: ['expenses_vehicles', selectedSafra, currentPage, itemsPerPage, filters],
     queryFn: async () => {
-      const response = await axios.get(`/api/expenses_vehicles/`);
+      const response = await axios.get(`/api/expenses_vehicles/${indexOfFirstItem}/${indexOfLastItem}`, {
+        params: {
+          inicio: new Date(selectedSafra.dataInicio),
+          fim: new Date(selectedSafra.dataFinal),
+          dados: JSON.stringify(filters)
+        }
+      });
       return response.data as expenses[]
     },
     initialData: [],
   })
-  const { data: commission, isLoading: commissionLoad } = useQuery<expenses[]>({
-    queryKey: ['comissions'],
+  const { data: commission, isLoading: commissionLoad, isFetched: comissionFetch } = useQuery<expenses[]>({
+    queryKey: ['comissions', selectedSafra, currentPage, itemsPerPage, filters],
     queryFn: async () => {
-      const response = await axios.get(`/api/comissions/`);
+      const response = await axios.get(`/api/comissions/${indexOfFirstItem}/${indexOfLastItem}`,
+        {
+          params: {
+            inicio: new Date(selectedSafra.dataInicio),
+            fim: new Date(selectedSafra.dataFinal),
+            dados: JSON.stringify(filters)
+          }
+        }
+      );
       return response.data as expenses[]
     },
     enabled: !!selectedSafra,
     initialData: [],
 
   })
-  const { data: aircraft, isLoading: aircraftLoad } = useQuery<expenses[]>({
-    queryKey: ['expenses_aircraft'],
+  const { data: aircraft, isLoading: aircraftLoad, isFetched: aircraftFetch } = useQuery<expenses[]>({
+    queryKey: ['expenses_aircraft', selectedSafra, currentPage, itemsPerPage, filters],
     queryFn: async () => {
-      const response = await axios.get(`/api/expenses_aircraft/`);
+      const response = await axios.get(`/api/expenses_aircraft/${indexOfFirstItem}/${indexOfLastItem}`, {
+        params: {
+          inicio: new Date(selectedSafra.dataInicio),
+          fim: new Date(selectedSafra.dataFinal),
+          dados: JSON.stringify(filters)
+        }
+      });
       return response.data as expenses[]
     },
     initialData: [],
@@ -105,29 +135,18 @@ export function ExpenseList() {
       'specific': specific
     }
   }
-  const filteredExpenses = filter[activeTab].length > 0 && filter[activeTab]?.filter(expense => {
+  const filteredExpenses = filter[activeTab]?.filter(expense => {
     if (!expense) {
       return null
     }
-    const expenseDate = new Date(expense.data)
-    const safraStartDate = selectedSafra ? new Date(selectedSafra.dataInicio) : null
-    const safraEndDate = selectedSafra ? new Date(selectedSafra.dataFinal) : null
-
-    const isWithinSafraDates = !selectedSafra ||
-      (expenseDate >= safraStartDate && expenseDate <= safraEndDate)
-
-    return isWithinSafraDates && Object.entries(filters).every(([key, value]) => {
+    return Object.entries(filters).every(([key, value]) => {
       if (!value) return true
       const serviceValue = expense[key as keyof Expense]?.toString()
       return typeof serviceValue === 'string' && serviceValue.toLowerCase().includes(value.toLowerCase())
     })
   })
 
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredExpenses.length > 0 && filteredExpenses?.slice(indexOfFirstItem, indexOfLastItem)
-
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber)
+  const currentItems = filteredExpenses
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -314,73 +333,13 @@ export function ExpenseList() {
     </div>
   )
 
-  const totalPages = Math.ceil(filteredExpenses?.length / itemsPerPage)
-  const maxVisibleButtons = 5
-
-  const renderPaginationButtons = () => {
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2))
-    let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1)
-
-    if (endPage - startPage + 1 < maxVisibleButtons) {
-      startPage = Math.max(1, endPage - maxVisibleButtons + 1)
-    }
-
-    const buttons = []
-
-    if (startPage > 1) {
-      buttons.push(
-        <Button key="first" onClick={() => paginate(1)} variant="outline" className="text-white">
-          <ChevronsLeft className="h-4 w-4 text-black" />
-        </Button>
-      )
-    }
-
-    if (currentPage > 1) {
-      buttons.push(
-        <Button key="prev" onClick={() => paginate(currentPage - 1)} variant="outline" className="text-white">
-          <ChevronLeft className="h-4 w-4 text-black" />
-        </Button>
-      )
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      buttons.push(
-        <Button
-          key={i}
-          onClick={() => paginate(i)}
-          variant={currentPage === i ? "default" : "outline"}
-          className={`${currentPage === i ? "bg-[#8FBC8F] text-white" : "text-black"}`}
-        >
-          {i}
-        </Button>
-      )
-    }
-
-    if (currentPage < totalPages) {
-      buttons.push(
-        <Button key="next" onClick={() => paginate(currentPage + 1)} variant="outline" className="text-white">
-          <ChevronRight className="h-4 w-4 text-black" />
-        </Button>
-      )
-    }
-
-    if (endPage < totalPages) {
-      buttons.push(
-        <Button key="last" onClick={() => paginate(totalPages)} variant="outline" className="text-white">
-          <ChevronsRight className="h-4 w-4 text-black" />
-        </Button>
-      )
-    }
-
-    return buttons
-  }
 
   const handleFilterChange = (field: keyof Service, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }))
   }
 
   const renderDesktopTable = (expenses: Expense[]) => (
-    expenses && (
+    (
       <Table>
         <TableHeader>
           <TableRow>
@@ -501,7 +460,7 @@ export function ExpenseList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {expenses?.map((expense) => (
+          {!isFetching || !specificFetch || !comissionFetch || !aircraftFetch ? expenses?.map((expense) => (
 
             <TableRow key={expense.id}>
               <TableCell>
@@ -644,7 +603,12 @@ export function ExpenseList() {
                 )}
               </TableCell>
             </TableRow>
-          ))}
+          )) : <>
+            <SkeletonTableRow columns={22} />
+            <SkeletonTableRow columns={22} />
+            <SkeletonTableRow columns={22} />
+            <SkeletonTableRow columns={22} />
+          </>}
         </TableBody>
       </Table>
     )
@@ -714,7 +678,34 @@ export function ExpenseList() {
                 </Select>
               </div>
               <div className="flex flex-wrap justify-center gap-2">
-                {renderPaginationButtons()}
+                <Button
+                  className='text-black'
+                  variant="outline"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  className='text-black'
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="flex items-center px-2">
+                  Página {currentPage}
+                </span>
+                <Button
+                  className='text-black'
+                  variant="outline"
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  disabled={filter[activeTab].length < itemsPerPage ? true : false}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+
               </div>
             </div>
           </TabsContent>
