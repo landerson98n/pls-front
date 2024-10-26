@@ -119,8 +119,6 @@ export async function GET(req, { params }) {
                 aircraft: true,
                 employees: true,
             },
-            skip: Number(start),
-            take: Number(end - start),
             where: whereClause
         });
 
@@ -188,8 +186,8 @@ export async function GET(req, { params }) {
                 criado_em: service.criado_em
             }
         }));
-
-        return NextResponse.json(serviceData, { status: 200 });
+        const paginate = serviceData.slice(start, end)
+        return NextResponse.json(paginate, { status: 200 });
     } catch (error) {
         console.error('Erro ao buscar serviços:', error);
         return NextResponse.json({ error: `Erro ao buscar serviços ${error}` }, { status: 500 });
