@@ -5,7 +5,8 @@ export async function GET(request, { params }) {
     const { dataInicio, dataFinal, employee_id, aircraft_id } = params;
 
     const startDate = new Date(dataInicio.split('_').reverse().join('-'));
-    const endDate = new Date(dataFinal.split('_').reverse().join('-'));
+    let endDate = new Date(dataFinal.split('_').reverse().join('-'));
+    endDate = new Date(`${endDate.getFullYear()}/${endDate.getMonth()}/${endDate.getDay()}`)
     try {
         const expenses_results = await prisma.expenses.findMany({
             where: {
@@ -23,7 +24,8 @@ export async function GET(request, { params }) {
                 valor: true,
             },
         });
-
+        console.log(expenses_results);
+        
         const expenses_data = expenses_results.map(expense => ({
             date: expense.data?.toLocaleDateString('pt-BR'),
             value: parseFloat(expense.valor) || 0.0,

@@ -1,23 +1,34 @@
 'use client'
+
+import { useState, useContext, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { useContext } from "react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
-import { useParams } from "next/navigation";
-import { SafraContext } from "@/app/pages/utils/context/safraContext";
+import { useQuery } from "@tanstack/react-query"
+import axios from "axios"
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts'
+import { useParams } from "next/navigation"
+import { SafraContext } from "@/app/pages/utils/context/safraContext"
+import { Button } from "@/components/ui/button"
+import { format } from "date-fns"
 
 export default function Page() {
     const { selectedSafra } = useContext(SafraContext)
     const { idAviao, idFuncionario } = useParams()
+    const [startDate, setStartDate] = useState<Date | undefined>(new Date(selectedSafra.dataInicio))
+    const [endDate, setEndDate] = useState<Date | undefined>(new Date(selectedSafra.dataFinal))
 
-    const { data: expensesData, isLoading: balanceDataLoad } = useQuery<{date: Date, value: number}[]>({
-        queryKey: ['despesas_por_categoria_especifica'],
+    useEffect(() => {
+        setStartDate(new Date(selectedSafra.dataInicio))
+        setEndDate(new Date(selectedSafra.dataFinal))
+    }, [selectedSafra])
+
+    const { data: expensesData, isLoading: balanceDataLoad, refetch } = useQuery<{ date: Date, value: number }[]>({
+        queryKey: ['despesas_por_categoria_especifica', startDate, endDate, idAviao, idFuncionario],
         queryFn: async () => {
-            const response = await axios.get(`/api/despesas_por_categoria_especifica/${selectedSafra.dataInicio}/${selectedSafra.dataFinal}/${idAviao}/${idFuncionario}`)
+            const response = await axios.get(`/api/despesas_por_categoria_especifica/${format(startDate!, 'yyyy-MM-dd')}/${format(endDate!, 'yyyy-MM-dd')}/${idAviao}/${idFuncionario}`)
             return response.data
         },
-        initialData: []
+        initialData: [],
+        enabled: !!startDate && !!endDate
     })
 
     const formatYAxis = (value: number) => {
@@ -33,7 +44,7 @@ export default function Page() {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-[#4B5320] p-2 rounded shadow-md">
-                    <p className="text-white">{`Data: ${label}`}</p>
+                    <p className="text-white">{`Data: ${format(new Date(label), 'dd/MM/yyyy')}`}</p>
                     <p className="text-white">{`Valor: R$ ${Number(payload[0].value).toFixed(2)}`}</p>
                 </div>
             )
@@ -42,10 +53,35 @@ export default function Page() {
         return null
     }
 
+    const handleDateChange = () => {
+        refetch()
+    }
+
     return (
-        <div className="space-y-6">
-            {expensesData.length > 0 && (
-                <Card className="bg-[#556B2F]">
+        <div className="space-y-6 p-6 bg-[#556B2F] rounded-lg">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <h2 className="text-2xl font-bold text-white">Detalhes de Despesas</h2>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="bg-white text-black rounded px-2 py-1"
+                    />
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="bg-white text-black rounded px-2 py-1"
+                    />
+                    <Button onClick={handleDateChange} className="bg-[#4B5320] text-white hover:bg-[#3A4219]">
+                        Atualizar
+                    </Button>
+                </div>
+            </div>
+
+            {expensesData.length > 0 ? (
+                <Card className="bg-[#4B5320]">
                     <CardHeader>
                         <CardTitle className='text-white'>Despesas Detalhadas - Total: R$ {expensesData.reduce((acc, item) => acc + Number(item.value), 0).toLocaleString()}</CardTitle>
                     </CardHeader>
@@ -56,6 +92,7 @@ export default function Page() {
                                     dataKey="date"
                                     stroke='white'
                                     tick={{ fill: 'white' }}
+                                    tickFormatter={(value) => format(new Date(value).toLocaleString(), `${"dd"}/MM`)}
                                 />
                                 <YAxis
                                     stroke='white'
@@ -79,6 +116,13 @@ export default function Page() {
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
+            ) : (
+                <Card className="bg-[#4B5320]">
+                    <CardContent>
+                        <p className="text-white text-center py-4">Nenhum dado disponível para o período selecionado.</p>
+                    </CardContent>
+                </Card>
             )}
-        </div>)
+        </div>
+    )
 }
