@@ -585,19 +585,12 @@ export function ExpenseList() {
               </TableCell>
               <TableCell>
                 {editingId === expense.id ? (
-                  <Select
+                  <Input
                     name="confirmação_de_pagamento"
                     value={editingExpense?.confirmação_de_pagamento || ''}
-                    onValueChange={(value) => setEditingExpense(prev => prev ? { ...prev, confirmação_de_pagamento: value } : null)}
-                  >
-                    <SelectTrigger className="bg-[#556B2F] text-white border-[#8FBC8F]">
-                      <SelectValue placeholder="Status de pagamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pago">Pago</SelectItem>
-                      <SelectItem value="Pendente">Pendente</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onChange={handleEditInputChange}
+                    className="bg-[#556B2F] text-white border-[#8FBC8F]"
+                  />
                 ) : (
                   expense.confirmação_de_pagamento
                 )}

@@ -205,22 +205,7 @@ export function ServiceList() {
 
   const renderEditableCell = (service: Service, field: keyof Service) => {
     if (editingId === service.id) {
-      if (field === 'confirmacao_de_pagamento_da_area') {
-        return (
-          <Select
-            value={editingService?.[field] || ''}
-            onValueChange={(value) => setEditingService(prev => prev ? { ...prev, [field]: value } : null)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status de pagamento" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Pago">Pago</SelectItem>
-              <SelectItem value="Em Aberto">Em Aberto</SelectItem>
-            </SelectContent>
-          </Select>
-        )
-      } else if (field === 'tipo_aplicacao_na_area') {
+      if (field === 'tipo_aplicacao_na_area') {
         return <Select onValueChange={(value) => setEditingService(prev => prev ? { ...prev, [field]: value } : null)} value={editingService?.[field] || ''}>
           <SelectTrigger id="tipo_aplicacao_na_area">
             <SelectValue placeholder="Selecione o tipo de aplicação" />
