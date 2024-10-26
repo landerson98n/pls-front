@@ -44,7 +44,7 @@ export default function Page() {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-[#4B5320] p-2 rounded shadow-md">
-                    <p className="text-white">{`Data: ${format(new Date(label), 'dd/MM/yyyy')}`}</p>
+                    <p className="text-white">{`Data: ${format(new Date(label), 'MM/dd/yyyy')}`}</p>
                     <p className="text-white">{`Valor: R$ ${Number(payload[0].value).toFixed(2)}`}</p>
                 </div>
             )
