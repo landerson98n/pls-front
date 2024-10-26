@@ -83,8 +83,6 @@ export async function GET(req, { params }) {
 
     try {
         const expenses = await prisma.expenses.findMany({
-            skip: Number(start),
-            take: Number(end - start),
             where: whereClause
         });
 
@@ -122,8 +120,8 @@ export async function GET(req, { params }) {
                 employee_id: expense.employee_id
             };
         }));
-
-        return NextResponse.json(expensesData, { status: 200 });
+        const paginatedData = expensesData.slice(start, end);
+        return NextResponse.json(paginatedData, { status: 200 });
     } catch (error) {
         console.error('Erro ao buscar serviços:', error);
         return NextResponse.json({ error: `Erro ao buscar serviços ${error}` }, { status: 500 });
