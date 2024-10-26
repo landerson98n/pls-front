@@ -130,18 +130,12 @@ export function RegisterExpense() {
       reset()
       queryClient.refetchQueries()
     } catch (error) {
-      console.log(error);
       toast({
         title: "Erro",
         description: `A despesa não foi cadastrada!`,
         variant: 'destructive'
       })
     }
-  }
-
-  if (errors) {
-    console.log(errors);
-
   }
 
   return (

@@ -16,6 +16,7 @@ export default function Aside() {
         { name: 'Funcionários', key: 'employees' },
         { name: 'Listar Despesas', key: 'list-expenses' },
         { name: 'Gerenciar Safras', key: 'safras' },
+        { name: 'Gerenciar Aeronaves', key: 'avioes' },
     ]
 
     const NavLinks = ({ onClick = () => { } }) => (

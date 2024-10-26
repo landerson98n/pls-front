@@ -72,8 +72,6 @@ export async function GET(request, { params }) {
             total_oleo_gasto: total_de_oleo._sum.valor,
         });
     } catch (error) {
-        console.log(error);
-
         return NextResponse.json({ error: `Formato de data inválido. Use o formato dd_mm_aaaa. ${error}` }, { status: 400 });
     }
 }

@@ -153,8 +153,6 @@ export function RegisterService() {
         queryClient.refetchQueries()
       }
     } catch (error) {
-      console.log(error);
-
       toast({
         title: "Error",
         description: `Erro ao cadastrar serviço`,
