@@ -67,6 +67,7 @@ export async function POST(req) {
                 employee_id,
                 porcentagem,
                 service_id,
+                aircraft_id
             };
         } else if (origem === "Despesa do Avião" || origem === "Despesa do Veículo" || origem === "Despesa Específica") {
             newExpense = {
