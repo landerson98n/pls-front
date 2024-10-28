@@ -44,7 +44,6 @@ export default function Page() {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-[#4B5320] p-2 rounded shadow-md">
-                    <p className="text-white">{`Data: ${new Date(label).toLocaleString('pt-br')}`}</p>
                     <p className="text-white">{`Valor: R$ ${Number(payload[0].value).toFixed(2)}`}</p>
                 </div>
             )
