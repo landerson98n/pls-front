@@ -71,7 +71,7 @@ export function DashboardPage({ children }) {
               <SelectValue placeholder="Selecione o funcionário" />
             </SelectTrigger>
             <SelectContent>
-              {employees?.map((item) => { return item.role === "Piloto" && <SelectItem value={item.id}>{item.name}</SelectItem> }
+              {employees?.map((item) => { return item.role === "Piloto" && <SelectItem value={item.id.toString()}>{item.name}</SelectItem> }
               )}
             </SelectContent>
           </Select>

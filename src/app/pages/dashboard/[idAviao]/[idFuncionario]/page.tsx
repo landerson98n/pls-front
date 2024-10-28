@@ -24,7 +24,7 @@ export default function Page() {
     const { data: expensesData, isLoading: balanceDataLoad, refetch } = useQuery<{ date: Date, value: number }[]>({
         queryKey: ['despesas_por_categoria_especifica', startDate, endDate, idAviao, idFuncionario],
         queryFn: async () => {
-            const response = await axios.get(`/api/despesas_por_categoria_especifica/${format(startDate!, 'yyyy-MM-dd')}/${format(endDate!, 'yyyy-MM-dd')}/${idAviao}/${idFuncionario}`)
+            const response = await axios.get(`/api/despesas_por_categoria_especifica/${selectedSafra.dataInicio}/${selectedSafra.dataFinal}/${idFuncionario}/${idAviao}`)
             return response.data
         },
         initialData: [],
@@ -44,7 +44,7 @@ export default function Page() {
         if (active && payload && payload.length) {
             return (
                 <div className="bg-[#4B5320] p-2 rounded shadow-md">
-                    <p className="text-white">{`Data: ${format(new Date(label), 'MM/dd/yyyy')}`}</p>
+                    <p className="text-white">{`Data: ${new Date(label).toLocaleString('pt-br')}`}</p>
                     <p className="text-white">{`Valor: R$ ${Number(payload[0].value).toFixed(2)}`}</p>
                 </div>
             )
@@ -92,7 +92,6 @@ export default function Page() {
                                     dataKey="date"
                                     stroke='white'
                                     tick={{ fill: 'white' }}
-                                    tickFormatter={(value) => format(new Date(value).toLocaleString(), `${"dd"}/MM`)}
                                 />
                                 <YAxis
                                     stroke='white'

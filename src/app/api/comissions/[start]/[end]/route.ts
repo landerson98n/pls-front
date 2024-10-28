@@ -21,7 +21,7 @@ export async function GET(req, { params }) {
     const { start, end } = params;
     const { searchParams } = new URL(req.url);
     const filtersJson = searchParams.get('dados')
-    const dataFilter: { [key in keyof Service]?: string } = await JSON.parse(filtersJson || '')
+    const dataFilter: { [key in keyof Expense]?: string } = await JSON.parse(filtersJson || '')
 
     const whereClause: any = {
         data: {
@@ -148,8 +148,8 @@ export async function GET(req, { params }) {
                 confirmação_de_pagamento: expense.confirma__o_de_pagamento,
                 service_name: serviceName,
                 employee_name: employeeName,
-                aircraft_id: service.aeronave_id,
-                employee_id: employee.id
+                aircraft_id: service?.aeronave_id,
+                employee_id: employee?.id
             };
         });
 

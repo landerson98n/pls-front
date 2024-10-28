@@ -83,7 +83,6 @@ export async function GET(request, { params }) {
 
         const valor_medio_por_hora_de_voo_total = (valor_total_bruto / total_horas_voadas).toFixed(2);
 
-        // Cálculo das despesas
         const despesas = servicos_e_despesas.flatMap(servico => servico.expenses);
         const total_gasto_combustivel = despesas.filter(d => d.tipo === 'Combustível').reduce((acc, d) => acc + Number(Number(d.valor)), 0);
         const total_gasto_oleo = despesas.filter(d => d.tipo === 'Óleo').reduce((acc, d) => acc + Number(d.valor), 0);
@@ -91,11 +90,9 @@ export async function GET(request, { params }) {
         const despesas_de_veiculo = despesas.filter(d => d.origem === 'Despesa do Veículo').reduce((acc, d) => acc + Number(d.valor), 0);
         const despesas_de_especificas = despesas.filter(d => d.origem === 'Despesa Específica').reduce((acc, d) => acc + Number(d.valor), 0);
 
-        // Calcular as comissões dos pilotos e auxiliares de pista
         const comissoes_de_pilotos = despesas.filter(d => d.employees?.role === 'Piloto').reduce((acc, d) => acc + Number(d.valor), 0);
         const comissoes_de_badeco = despesas.filter(d => d.employees?.role === 'Auxiliar de pista').reduce((acc, d) => acc + Number(d.valor), 0);
 
-        // Lucro total após deduzir as despesas
         let lucro_total = valor_total_bruto;
         lucro_total -= total_gasto_combustivel + total_gasto_oleo + restante_das_despesas + despesas_de_veiculo + despesas_de_especificas;
 

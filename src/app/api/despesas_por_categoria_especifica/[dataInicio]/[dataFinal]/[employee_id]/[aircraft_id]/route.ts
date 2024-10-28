@@ -2,30 +2,34 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
-    const { dataInicio, dataFinal, employee_id, aircraft_id } = params;
+    const { dataInicio, dataFinal, aircraft_id, employee_id } = params;
 
-    const startDate = new Date(dataInicio.split('_').reverse().join('-'));
-    let endDate = new Date(dataFinal.split('_').reverse().join('-'));
-    endDate = new Date(`${endDate.getFullYear()}/${endDate.getMonth()}/${endDate.getDay()}`)
+    const startDate = new Date(dataInicio);
+    let endDate = new Date(dataFinal);
+
     try {
         const expenses_results = await prisma.expenses.findMany({
             where: {
                 employee_id: parseInt(employee_id),
-                data: {
-                    gte: startDate,
-                    lte: endDate,
-                },
-                services: {
-                    aeronave_id: parseInt(aircraft_id),
-                },
+                aircraft_id: parseInt(aircraft_id),
             },
             select: {
                 data: true,
                 valor: true,
+                aircraft: {
+                    select: {
+                        registration: true
+                    }
+                },
+                employees: {
+                    select: {
+                        name: true
+                    }
+                }
             },
         });
         console.log(expenses_results);
-        
+
         const expenses_data = expenses_results.map(expense => ({
             date: expense.data?.toLocaleDateString('pt-BR'),
             value: parseFloat(expense.valor) || 0.0,
