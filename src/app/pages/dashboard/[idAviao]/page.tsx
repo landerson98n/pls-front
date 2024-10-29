@@ -2,22 +2,35 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Suspense, useContext, useMemo } from "react";
+import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import { ResponsiveContainer } from "recharts"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import { SafraContext } from "../../utils/context/safraContext";
 import { useParams } from "next/navigation";
 import { expenses } from "@prisma/client";
+import { Button } from "@/components/ui/button";
 
 export default function Page() {
     const { selectedSafra } = useContext(SafraContext)
     const { idAviao } = useParams()
     const queryClient = useQueryClient();
 
-    const { data: balanceData, isLoading: balanceDataLoad } = useQuery<[]>({
-        queryKey: ['gerar_balanco'],
+    const [startDate, setStartDate] = useState<Date>(new Date(selectedSafra.dataInicio))
+    const [endDate, setEndDate] = useState<Date>(new Date(selectedSafra.dataFinal))
+
+
+    const safraStartDate = new Date(startDate)
+    const safraEndDate = new Date(endDate)
+
+    useEffect(() => {
+        setStartDate(new Date(selectedSafra.dataInicio))
+        setEndDate(new Date(selectedSafra.dataFinal))
+    }, [selectedSafra])
+
+    const { data: balanceData, isLoading: balanceDataLoad, refetch } = useQuery<[]>({
+        queryKey: ['gerar_balanco', endDate, startDate],
         queryFn: async () => {
-            const response = await axios.get(`/api/gerar_balanco/${selectedSafra.dataInicio}/${selectedSafra.dataFinal}/${idAviao}`)
+            const response = await axios.get(`/api/gerar_balanco/${startDate}/${endDate}/${idAviao}`)
             return response.data as []
         },
         initialData: [],
@@ -25,64 +38,64 @@ export default function Page() {
     })
 
     const { data: aircraftReport, isLoading: aircraftReportLoad } = useQuery<[]>({
-        queryKey: ['gerar_relatorio_da_aeronave'],
+        queryKey: ['gerar_relatorio_da_aeronave', endDate, startDate],
         queryFn: async () => {
-            const response = await axios.get(`/api/gerar_relatorio_da_aeronave/${selectedSafra.dataInicio}/${selectedSafra.dataFinal}/${idAviao}`)
+            const response = await axios.get(`/api/gerar_relatorio_da_aeronave/${startDate}/${endDate}/${idAviao}`)
             return response.data as []
         },
         initialData: [],
 
     })
 
-    const expenses_aircraft = () => {
-        const commissionsData = queryClient.getQueryData<expenses[]>(['expenses_aircraft']);
-        if (!commissionsData) return [];
+    const { data: expenses_aircraft, isLoading: expenses_aircraftLoad, refetch: refetchAir } = useQuery<expenses[]>({
+        queryKey: ['expenses_aircraft', safraStartDate, safraEndDate],
+        queryFn: async () => {
+            const response = await axios.get(`/api/expenses_aircraft/`);
+            return response.data.filter((item) => {
+                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate && item.aircraft_id === Number(idAviao)
+            }) as expenses[]
+        },
+        initialData: [],
+    })
 
-        return commissionsData?.filter((item) => {
-            return (
-                item.aircraft_id === Number(idAviao)
-            );
-        });
-    };
+    const { data: comissions, isLoading: comissionstLoad, refetch: refetchComm } = useQuery<expenses[]>({
+        queryKey: ['comissions', safraStartDate, safraEndDate],
+        queryFn: async () => {
+            const response = await axios.get(`/api/comissions/`);
+            return response.data.filter((item) => {
+                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate && item.aircraft_id === Number(idAviao)
+            }) as []
+        },
+        initialData: [],
+    })
 
-    const comissions = () => {
-        const commissionsData = queryClient.getQueryData<expenses[]>(['comissions']);
-        if (!commissionsData) return [];
+    const { data: expenses_vehicles, isLoading: expenses_vehiclesLoad, refetch: refetchVeh } = useQuery<expenses[]>({
+        queryKey: ['expenses_vehicles', safraStartDate, safraEndDate],
+        queryFn: async () => {
+            const response = await axios.get(`/api/expenses_vehicles/`);
+            return response.data.filter((item) => {
+                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate && item.aircraft_id === Number(idAviao)
+            }) as []
+        },
+        initialData: [],
+    })
 
-        return commissionsData?.filter((item) => {
-            return (
-                item.aircraft_id === Number(idAviao)
-            );
-        });
-    };
-
-    const expenses_vehicles = () => {
-        const commissionsData = queryClient.getQueryData<expenses[]>(['expenses_vehicles']);
-        if (!commissionsData) return [];
-
-        return commissionsData?.filter((item) => {
-            return (
-                item.aircraft_id === Number(idAviao)
-            );
-        });
-    };
-
-    const expenses_specific = () => {
-        const commissionsData = queryClient.getQueryData<expenses[]>(['expenses_specific']);
-        if (!commissionsData) return [];
-
-        return commissionsData?.filter((item) => {
-            return (
-                item.aircraft_id === Number(idAviao)
-            );
-        });
-    };
+    const { data: expenses_specific, isLoading: expenses_specificLoad, refetch: refetchSpe } = useQuery<expenses[]>({
+        queryKey: ['expenses_specific', safraStartDate, safraEndDate],
+        queryFn: async () => {
+            const response = await axios.get(`/api/expenses_specific/`);
+            return response.data.filter((item: expenses) => {
+                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate && item.aircraft_id === Number(idAviao)
+            }) as []
+        },
+        initialData: [],
+    })
 
     const filteredExpenses = useMemo(() => {
-        const aircraft = expenses_aircraft()
-        const commission = comissions()
-        const vehicle = expenses_vehicles()
-        const specific = expenses_specific()
+        const aircraft = expenses_aircraft
+        const commission = comissions
+        const vehicle = expenses_vehicles
+        const specific = expenses_specific
 
         return {
             Aeronave: aircraft,
@@ -91,7 +104,7 @@ export default function Page() {
             Específico: specific,
             Total: [...aircraft, ...commission, ...vehicle, ...specific]
         }
-    }, [idAviao])
+    }, [idAviao, startDate, endDate])
 
     const expensesByType = useMemo(() => {
         return Object.entries(filteredExpenses).map(([type, expenses]) => {
@@ -118,8 +131,27 @@ export default function Page() {
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
 
 
+    const handleDateChange = () => {
+        refetch()
+    }
+
     return (
         <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-white text-black rounded px-2 py-1"
+                />
+                <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-white text-black rounded px-2 py-1"
+                />
+            </div>
+
             <Card className="bg-[#556B2F]">
                 <CardHeader>
                     <CardTitle className='text-white'>Despesas Gerais da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>

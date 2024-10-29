@@ -24,7 +24,7 @@ export default function Page() {
     const { data: expensesData, isLoading: balanceDataLoad, refetch } = useQuery<{ date: Date, value: number }[]>({
         queryKey: ['despesas_por_categoria_especifica', startDate, endDate, idAviao, idFuncionario],
         queryFn: async () => {
-            const response = await axios.get(`/api/despesas_por_categoria_especifica/${selectedSafra.dataInicio}/${selectedSafra.dataFinal}/${idFuncionario}/${idAviao}`)
+            const response = await axios.get(`/api/despesas_por_categoria_especifica/${startDate}/${endDate}/${idFuncionario}/${idAviao}`)
             return response.data
         },
         initialData: [],

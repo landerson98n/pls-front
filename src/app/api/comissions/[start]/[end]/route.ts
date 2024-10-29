@@ -55,6 +55,21 @@ export async function GET(req, { params }) {
                 ]
             }
         }
+        else if (key === 'service_name' && value && value !== '') {
+            whereClause['services'] = {
+                OR: [
+                    {
+                        solicitante_da_area: { contains: value }
+                    },
+                    {
+                        id: { equals: Number(value) ? Number(value) : 0 }
+                    },
+                    {
+                        nome_da_area: { contains: value }
+                    }
+                ]
+            }
+        }
         else if (key === 'employee_name' && value && value !== '') {
             whereClause['employees'] = {
 
@@ -65,27 +80,27 @@ export async function GET(req, { params }) {
             }
         }
         else if (key === 'aircraft_name' && value && value !== '') {
-            whereClause['aircraft'] = {
-
-                OR: [
-                    {
-                        model: {
-                            contains: value
-                        }
-                    },
-                    {
-                        brand:
+            whereClause['services'] = {
+                aircraft: {
+                    OR: [
                         {
-                            contains: value
+                            model: {
+                                contains: value
+                            }
+                        },
+                        {
+                            brand:
+                            {
+                                contains: value
+                            }
+                        },
+                        {
+                            registration: {
+                                contains: value
+                            }
                         }
-                    },
-                    {
-                        registration: {
-                            contains: value
-                        }
-                    }
-                ]
-
+                    ]
+                }
             }
         }
         else {
@@ -101,7 +116,11 @@ export async function GET(req, { params }) {
             where: whereClause,
             include: {
                 employees: true,
-                services: true
+                services: {
+                    include: {
+                        aircraft: true
+                    }
+                }
             }
         });
 
@@ -128,7 +147,7 @@ export async function GET(req, { params }) {
         const expensesData = filteredServices.map(expense => {
             const service = expense.services;
             const employee = expense.employees;
-
+            const aircraft = expense.services?.aircraft
             const serviceName = service
                 ? `Id: ${service.id} | ${service.solicitante_da_area} | ${service.nome_da_area} de ${service.data_inicio?.toLocaleDateString('pt-BR')} até ${service.data_final?.toLocaleDateString('pt-BR')}`
                 : 'Serviço não registrado';
@@ -149,7 +168,8 @@ export async function GET(req, { params }) {
                 service_name: serviceName,
                 employee_name: employeeName,
                 aircraft_id: service?.aeronave_id,
-                employee_id: employee?.id
+                employee_id: employee?.id,
+                aircraft_name: `${aircraft?.brand} ${aircraft?.model} ${aircraft?.registration}`
             };
         });
 

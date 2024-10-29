@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import { SafraContext } from '../utils/context/safraContext'
 import { employees, expenses } from '@prisma/client'
+import { Button } from '@/components/ui/button'
 
 
 export default function Dashboard() {
@@ -23,7 +24,7 @@ export default function Dashboard() {
     }, [selectedSafra])
 
     const { data: expenses_aircraft, isLoading: expenses_aircraftLoad, refetch: refetchAir } = useQuery<expenses[]>({
-        queryKey: ['expenses_aircraft'],
+        queryKey: ['expenses_aircraft', safraStartDate, safraEndDate],
         queryFn: async () => {
             const response = await axios.get(`/api/expenses_aircraft/`);
             return response.data.filter((item) => {
@@ -32,9 +33,9 @@ export default function Dashboard() {
         },
         initialData: [],
     })
-    
+
     const { data: comissions, isLoading: comissionstLoad, refetch: refetchComm } = useQuery<expenses[]>({
-        queryKey: ['comissions'],
+        queryKey: ['comissions', safraStartDate, safraEndDate],
         queryFn: async () => {
             const response = await axios.get(`/api/comissions/`);
             return response.data.filter((item) => {
@@ -44,8 +45,8 @@ export default function Dashboard() {
         initialData: [],
     })
 
-    const { data: expenses_vehicles, isLoading: expenses_vehiclesLoad , refetch: refetchVeh} = useQuery<expenses[]>({
-        queryKey: ['expenses_vehicles'],
+    const { data: expenses_vehicles, isLoading: expenses_vehiclesLoad, refetch: refetchVeh } = useQuery<expenses[]>({
+        queryKey: ['expenses_vehicles', safraStartDate, safraEndDate],
         queryFn: async () => {
             const response = await axios.get(`/api/expenses_vehicles/`);
             return response.data.filter((item) => {
@@ -56,7 +57,7 @@ export default function Dashboard() {
     })
 
     const { data: expenses_specific, isLoading: expenses_specificLoad, refetch: refetchSpe } = useQuery<expenses[]>({
-        queryKey: ['expenses_specific'],
+        queryKey: ['expenses_specific', safraStartDate, safraEndDate],
         queryFn: async () => {
             const response = await axios.get(`/api/expenses_specific/`);
             return response.data.filter((item) => {
@@ -147,6 +148,21 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-white text-black rounded px-2 py-1"
+                />
+                <input
+                    type="date"
+                    value={dataFinal}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-white text-black rounded px-2 py-1"
+                />
+            </div>
+
             {expensesByTypePiloto && <Card className="bg-[#556B2F]">
                 <CardHeader>
                     <CardTitle className='text-white'>Total de Comissão Por Piloto</CardTitle>
@@ -175,7 +191,7 @@ export default function Dashboard() {
 
             <Card className="bg-[#556B2F]">
                 <CardHeader>
-                    <CardTitle className='text-white'>Despesas por Categoria - TOTAL</CardTitle>
+                    <CardTitle className='text-white'>Despesas por Categoria</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">

@@ -334,7 +334,7 @@ export function ExpenseList() {
   )
 
 
-  const handleFilterChange = (field: keyof Service, value: string) => {
+  const handleFilterChange = (field: keyof Expense, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }))
   }
 
@@ -359,17 +359,15 @@ export function ExpenseList() {
                 className="mt-1 w-30"
               />
             </TableHead>
-            {activeTab !== 'commission' && (
-              <TableHead className='text-white'>
-                Aeronave
-                <Input
-                  placeholder="Filtrar Aeronave"
-                  value={filters.aircraft_name || ''}
-                  onChange={(e) => handleFilterChange('aircraft_name', e.target.value)}
-                  className="mt-1 w-30"
-                />
-              </TableHead>
-            )}
+            <TableHead className='text-white'>
+              Aeronave
+              <Input
+                placeholder="Filtrar Aeronave"
+                value={filters.aircraft_name || ''}
+                onChange={(e) => handleFilterChange('aircraft_name', e.target.value)}
+                className="mt-1 w-30"
+              />
+            </TableHead>
             {activeTab === 'commission' && (
               <>
                 <TableHead className='text-white'>
@@ -491,11 +489,10 @@ export function ExpenseList() {
                 </div>
               </TableCell>
               <TableCell>{expense.id}</TableCell>
-              {activeTab !== 'commission' && (
-                <TableCell>
-                  {expense.aircraft_name}
-                </TableCell>
-              )}
+              <TableCell>
+                {expense.aircraft_name}
+              </TableCell>
+
               {activeTab === 'commission' && (
                 <>
                   <TableCell>
