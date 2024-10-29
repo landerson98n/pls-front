@@ -159,8 +159,7 @@ export function AircraftManagement() {
                     <TableRow>
                         <TableHead>Registro</TableHead>
                         <TableHead>Modelo</TableHead>
-                        <TableHead>Capacidade</TableHead>
-                        <TableHead>Ano de Fabricação</TableHead>
+                        <TableHead>Marca</TableHead>
                         <TableHead>Ações</TableHead>
                     </TableRow>
                 </TableHeader>
