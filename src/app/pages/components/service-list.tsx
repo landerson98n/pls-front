@@ -14,7 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
-import { expenses, services } from '@prisma/client'
+import { aircraft, expenses, services } from '@prisma/client'
 import { useQuery } from '@tanstack/react-query'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
 import SkeletonTableRow from './skeleton-table-row'
@@ -60,6 +60,18 @@ export function ServiceList() {
   const [filters, setFilters] = useState<{ [key in keyof Service]?: string }>({})
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
+
+
+  const { data: aircrafts, isLoading: aircraftsLoad } = useQuery<aircraft[]>({
+    queryKey: ['aircrafts'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/aircraft/`);
+      return response.data as aircraft[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
+  })
+
 
   const { data: services, isLoading: servicesLoad, refetch: refetchServices, isFetching } = useQuery<services[]>({
     queryKey: ['services', currentPage, filters, selectedSafra, itemsPerPage],
@@ -216,7 +228,25 @@ export function ServiceList() {
             <SelectItem value="nenhum">Nenhum</SelectItem>
           </SelectContent>
         </Select>
-      } else {
+      }
+      else if (field === 'aeronave_data') {
+        return <Select onValueChange={async (value) => {
+          const aero = await JSON.parse(value)
+          setEditingService(prev => prev ? { ...prev, ['aeronave_id']: aero.id } : null)
+          setEditingService(prev => prev ? { ...prev, ['aeronave_data']: `${aero.registration} ${aero.brand} ${aero.model} ` } : null)
+        }} value={editingService?.['aeronave_data']}>
+          <SelectTrigger id="aeronave_data">
+            {editingService?.['aeronave_data']}
+          </SelectTrigger>
+          <SelectContent>
+            {aircrafts.map(item => (
+              <SelectItem value={JSON.stringify(item)}>{item.registration} {item.brand} {item.model} </SelectItem>
+            ))}
+
+          </SelectContent>
+        </Select>
+      }
+      else {
         return (
           <Input
             value={editingService?.[field] || ''}
@@ -618,7 +648,7 @@ export function ServiceList() {
                   </div>
                 </TableCell>
                 <TableCell>{service.id}</TableCell>
-                <TableCell>{service.aeronave_data}</TableCell>
+                <TableCell>{renderEditableCell(service, 'aeronave_data')}</TableCell>
                 <TableCell>{service.employee_data}</TableCell>
                 {renderEditableCell(service, 'confirmacao_de_pagamento_da_area')
                   ?.toString()
