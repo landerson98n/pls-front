@@ -24,7 +24,7 @@ export async function PUT(req) {
     try {
         const data = await req.json();
         const {
-            data: expenseDate, origem, tipo, descricao, porcentagem, valor, confirmação_de_pagamento, funcionario_id
+            data: expenseDate, origem, tipo, descricao, porcentagem, valor, confirmação_de_pagamento, funcionario_id, aircraft_id
         } = data.updatedData;
         const id = data.id
 
@@ -39,6 +39,7 @@ export async function PUT(req) {
                 valor,
                 confirma__o_de_pagamento: confirmação_de_pagamento,
                 employee_id: funcionario_id,
+                aircraft_id
             },
         });
 

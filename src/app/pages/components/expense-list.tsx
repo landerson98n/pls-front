@@ -14,7 +14,7 @@ import axios from 'axios'
 import { toast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { expenses } from '@prisma/client'
+import { aircraft, expenses } from '@prisma/client'
 import { SafraContext } from '@/app/pages/utils/context/safraContext'
 import SkeletonTableRow from './skeleton-table-row'
 type Expense = {
@@ -29,6 +29,7 @@ type Expense = {
   porcentagem?: number
   employee_name?: string
   service_name?: string
+  aircraft_id?: string
 }
 
 const expenseTypes = [
@@ -118,6 +119,16 @@ export function ExpenseList() {
     },
     initialData: [],
 
+  })
+
+  const { data: aircrafts, isLoading: aircraftsLoad } = useQuery<aircraft[]>({
+    queryKey: ['aircrafts'],
+    queryFn: async () => {
+      const response = await axios.get(`/api/aircraft/`);
+      return response.data as aircraft[]
+    },
+    enabled: !!selectedSafra,
+    initialData: [],
   })
 
   let filter = {
@@ -269,7 +280,7 @@ export function ExpenseList() {
         return null
       })
     } else {
-      const { name, value } = e.target
+      const { name, value } = e.target      
       setEditingExpense(prev => {
         if (prev) {
           return { ...prev, [name]: name === 'valor' || name === 'porcentagem' ? parseFloat(value) : value }
@@ -490,7 +501,35 @@ export function ExpenseList() {
               </TableCell>
               <TableCell>{expense.id}</TableCell>
               <TableCell>
-                {expense.aircraft_name}
+                {editingId === expense.id ? (
+                  <Select onValueChange={async (value) => {
+                    const aero = await JSON.parse(value)
+                    handleEditInputChange({
+                        target: {
+                          name: 'aircraft_name',
+                          value: `${aero.registration} ${aero.brand} ${aero.model}`
+                        }
+                    })
+                    handleEditInputChange({
+                      target: {
+                        name: 'aircraft_id',
+                        value: aero.id
+                      }
+                  })
+                  }} value={editingExpense?.aircraft_name}>
+                    <SelectTrigger id="aircraft_name">
+                      {editingExpense?.aircraft_name}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aircrafts.map(item => (
+                        <SelectItem value={JSON.stringify(item)}>{item.registration} {item.brand} {item.model} </SelectItem>
+                      ))}
+
+                    </SelectContent>
+                  </Select>
+                ) :
+                  `${expense.aircraft_name}`
+                }
               </TableCell>
 
               {activeTab === 'commission' && (
