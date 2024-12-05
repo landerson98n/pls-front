@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -61,6 +61,7 @@ export function RegisterService() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { selectedSafra } = useContext(SafraContext);
+  const [ano, setAno] = useState(format(selectedSafra.dataFinal, 'yyyy'))
   const { control, handleSubmit, formState: { errors }, reset, setValue, getValues } = useForm<ServiceFormData>({
     resolver: zodResolver(serviceSchema),
     defaultValues: {
@@ -130,9 +131,8 @@ export function RegisterService() {
         })
         return
       }
-      const year = format(selectedSafra.dataFinal, 'yyyy');
-      const data_inicio_completa = `${data.data_inicio}/${year}`;
-      const data_final_completa = `${data.data_final}/${year}`;
+      const data_inicio_completa = `${data.data_inicio}/${ano}`;
+      const data_final_completa = `${data.data_final}/${ano}`;
       const token = JSON.parse(localStorage.getItem('token') || JSON.stringify(""))
       const time = data.tempo_de_voo_gasto_na_area.split(":")
       const hour = parseFloat(time[0]) + parseFloat(time[1]) / 60
@@ -183,6 +183,18 @@ export function RegisterService() {
                 {errors.data_inicio.message}
               </p>
             )}
+          </div>
+          <div >
+            <Label htmlFor="data " className='text-white'>Ano</Label>
+            <Select onValueChange={setAno} value={ano}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o ano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={format(selectedSafra.dataInicio, 'yyyy')}>{format(selectedSafra.dataInicio, 'yyyy')}</SelectItem>
+                <SelectItem value={format(selectedSafra.dataFinal, 'yyyy')}>{format(selectedSafra.dataFinal, 'yyyy')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="data_final">Data final</Label>
