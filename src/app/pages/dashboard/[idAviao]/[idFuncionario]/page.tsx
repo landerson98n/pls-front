@@ -7,28 +7,30 @@ import axios from "axios"
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { useParams } from "next/navigation"
 import { SafraContext } from "@/app/pages/utils/context/safraContext"
-import { Button } from "@/components/ui/button"
-import { format } from "date-fns"
+import { toDateKey, toPathDate } from "@/app/pages/utils/safraDate"
 
 export default function Page() {
     const { selectedSafra } = useContext(SafraContext)
     const { idAviao, idFuncionario } = useParams()
-    const [startDate, setStartDate] = useState<Date | undefined>(new Date(selectedSafra.dataInicio))
-    const [endDate, setEndDate] = useState<Date | undefined>(new Date(selectedSafra.dataFinal))
+    const safraInicio = toDateKey(selectedSafra?.dataInicio)
+    const safraFim = toDateKey(selectedSafra?.dataFinal)
+    const [startDate, setStartDate] = useState(safraInicio)
+    const [endDate, setEndDate] = useState(safraFim)
+    const pathStart = toPathDate(startDate)
+    const pathEnd = toPathDate(endDate)
 
     useEffect(() => {
-        setStartDate(new Date(selectedSafra.dataInicio))
-        setEndDate(new Date(selectedSafra.dataFinal))
-    }, [selectedSafra])
+        setStartDate(safraInicio)
+        setEndDate(safraFim)
+    }, [selectedSafra?.id, safraInicio, safraFim])
 
-    const { data: expensesData, isLoading: balanceDataLoad, refetch } = useQuery<{ date: Date, value: number }[]>({
-        queryKey: ['despesas_por_categoria_especifica', startDate, endDate, idAviao, idFuncionario],
+    const { data: expensesData = [] } = useQuery<{ date: string, value: number }[]>({
+        queryKey: ['despesas_por_categoria_especifica', pathStart, pathEnd, idAviao, idFuncionario],
         queryFn: async () => {
-            const response = await axios.get(`/api/despesas_por_categoria_especifica/${startDate}/${endDate}/${idFuncionario}/${idAviao}`)
-            return response.data
+            const response = await axios.get(`/api/despesas_por_categoria_especifica/${pathStart}/${pathEnd}/${idFuncionario}/${idAviao}`)
+            return Array.isArray(response.data) ? response.data : []
         },
-        initialData: [],
-        enabled: !!startDate && !!endDate
+        enabled: Boolean(pathStart && pathEnd && idAviao && idFuncionario)
     })
 
     const formatYAxis = (value: number) => {
@@ -52,10 +54,6 @@ export default function Page() {
         return null
     }
 
-    const handleDateChange = () => {
-        refetch()
-    }
-
     return (
         <div className="space-y-6 p-6 bg-[#556B2F] rounded-lg">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -73,9 +71,6 @@ export default function Page() {
                         onChange={(e) => setEndDate(e.target.value)}
                         className="bg-white text-black rounded px-2 py-1"
                     />
-                    <Button onClick={handleDateChange} className="bg-[#4B5320] text-white hover:bg-[#3A4219]">
-                        Atualizar
-                    </Button>
                 </div>
             </div>
 

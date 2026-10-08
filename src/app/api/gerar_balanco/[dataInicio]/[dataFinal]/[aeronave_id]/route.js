@@ -1,18 +1,22 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { parseRangeParam } from '@/lib/dateRange';
 
 export async function GET(request, { params }) {
     const { dataInicio, dataFinal, aeronave_id } = params;
 
     try {
-        const startDate = new Date(dataInicio.split('_').reverse().join('-'));
-        const endDate = new Date(dataFinal.split('_').reverse().join('-'));
+        const startDate = parseRangeParam(dataInicio);
+        const endDate = parseRangeParam(dataFinal, true);
+        if (!startDate || !endDate) {
+            return NextResponse.json({ error: 'Formato de data inválido. Use o formato dd_mm_aaaa.' }, { status: 400 });
+        }
         const total_valor_area = await prisma.services.aggregate({
             _sum: {
                 valor_total_da_area: true,
             },
             where: {
-                criado_em: {
+                data_inicio: {
                     gte: startDate,
                     lte: endDate,
                 },

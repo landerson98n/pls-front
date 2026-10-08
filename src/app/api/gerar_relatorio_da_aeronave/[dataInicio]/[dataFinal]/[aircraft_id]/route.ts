@@ -1,21 +1,22 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { parseRangeParam } from '@/lib/dateRange';
 
 export async function GET(request, { params }) {
     const { dataInicio, dataFinal, aircraft_id } = params;
 
     try {
-        const startDate = new Date(dataInicio.split('_').reverse().join('-'));
-        const endDate = new Date(dataFinal.split('_').reverse().join('-'));
+        const startDate = parseRangeParam(dataInicio);
+        const endDate = parseRangeParam(dataFinal, true);
 
-        if (isNaN(startDate) || isNaN(endDate)) {
+        if (!startDate || !endDate) {
             return NextResponse.json({ error: 'Formato de data inválido. Use o formato dd_mm_aaaa.' }, { status: 400 });
         }
 
         const servicos_e_despesas = await prisma.services.findMany({
             where: {
                 aeronave_id: parseInt(aircraft_id),
-                criado_em: {
+                data_inicio: {
                     gte: startDate,
                     lte: endDate,
                 },

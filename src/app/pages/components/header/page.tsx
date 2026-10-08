@@ -19,11 +19,16 @@ export default function Header() {
         queryKey: ['safras'],
         queryFn: async () => {
             const response = await axios.get(`/api/safras/`);
-            setSelectedSafra(selectedSafra.id ? selectedSafra : response.data[0])
             return response.data as safras[]
         },
         initialData: [],
     })
+
+    useEffect(() => {
+        if (!selectedSafra?.id && safras?.length > 0) {
+            setSelectedSafra(safras[0])
+        }
+    }, [safras, selectedSafra?.id, setSelectedSafra])
     
     const [activeComponent, setActiveComponent] = useState('dashboard')
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)

@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { parseRangeParam } from '@/lib/dateRange';
 
 export async function GET(request, { params }) {
     const { dataInicio, dataFinal, aircraft_id, employee_id } = params;
 
-    const startDate = new Date(dataInicio);
-    let endDate = new Date(dataFinal);
+    const startDate = parseRangeParam(dataInicio);
+    const endDate = parseRangeParam(dataFinal, true);
+    if (!startDate || !endDate) {
+        return NextResponse.json({ error: 'Formato de data inválido.' }, { status: 400 });
+    }
     try {
         const expenses_results = await prisma.expenses.findMany({
             where: {

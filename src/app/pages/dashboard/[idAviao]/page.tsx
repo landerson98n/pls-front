@@ -1,110 +1,103 @@
 'use client'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Suspense, useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { ResponsiveContainer } from "recharts"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts'
 import { SafraContext } from "../../utils/context/safraContext";
 import { useParams } from "next/navigation";
 import { expenses } from "@prisma/client";
-import { Button } from "@/components/ui/button";
+import { isWithinRange, toDateKey, toPathDate } from "../../utils/safraDate";
+
+async function fetchList(url: string) {
+    const response = await axios.get(url)
+    return Array.isArray(response.data) ? response.data : []
+}
 
 export default function Page() {
     const { selectedSafra } = useContext(SafraContext)
     const { idAviao } = useParams()
-    const queryClient = useQueryClient();
-
-    const [startDate, setStartDate] = useState<Date>(new Date(selectedSafra.dataInicio))
-    const [endDate, setEndDate] = useState<Date>(new Date(selectedSafra.dataFinal))
-
-
-    const safraStartDate = new Date(startDate)
-    const safraEndDate = new Date(endDate)
+    const safraInicio = toDateKey(selectedSafra?.dataInicio)
+    const safraFim = toDateKey(selectedSafra?.dataFinal)
+    const [startDate, setStartDate] = useState(safraInicio)
+    const [endDate, setEndDate] = useState(safraFim)
+    const pathStart = toPathDate(startDate)
+    const pathEnd = toPathDate(endDate)
+    const aircraftId = Number(idAviao)
 
     useEffect(() => {
-        setStartDate(new Date(selectedSafra.dataInicio))
-        setEndDate(new Date(selectedSafra.dataFinal))
-    }, [selectedSafra])
+        setStartDate(safraInicio)
+        setEndDate(safraFim)
+    }, [selectedSafra?.id, safraInicio, safraFim])
 
-    const { data: balanceData, isLoading: balanceDataLoad, refetch } = useQuery<[]>({
-        queryKey: ['gerar_balanco', endDate, startDate],
+    const { data: balanceData } = useQuery({
+        queryKey: ['gerar_balanco', pathStart, pathEnd, idAviao],
         queryFn: async () => {
-            const response = await axios.get(`/api/gerar_balanco/${startDate}/${endDate}/${idAviao}`)
-            return response.data as []
+            const response = await axios.get(`/api/gerar_balanco/${pathStart}/${pathEnd}/${idAviao}`)
+            return response.data
         },
-        initialData: [],
-
+        enabled: Boolean(pathStart && pathEnd && idAviao),
     })
 
-    const { data: aircraftReport, isLoading: aircraftReportLoad } = useQuery<[]>({
-        queryKey: ['gerar_relatorio_da_aeronave', endDate, startDate],
+    const { data: aircraftReport } = useQuery({
+        queryKey: ['gerar_relatorio_da_aeronave', pathStart, pathEnd, idAviao],
         queryFn: async () => {
-            const response = await axios.get(`/api/gerar_relatorio_da_aeronave/${startDate}/${endDate}/${idAviao}`)
-            return response.data as []
+            const response = await axios.get(`/api/gerar_relatorio_da_aeronave/${pathStart}/${pathEnd}/${idAviao}`)
+            return response.data
         },
-        initialData: [],
-
+        enabled: Boolean(pathStart && pathEnd && idAviao),
     })
 
-    const { data: expenses_aircraft, isLoading: expenses_aircraftLoad, refetch: refetchAir } = useQuery<expenses[]>({
-        queryKey: ['expenses_aircraft', safraStartDate, safraEndDate],
-        queryFn: async () => {
-            const response = await axios.get(`/api/expenses_aircraft/`);
-            return response.data.filter((item) => {
-                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate && item.aircraft_id === Number(idAviao)
-            }) as expenses[]
-        },
-        initialData: [],
+    const { data: allAircraftExpenses = [] } = useQuery<expenses[]>({
+        queryKey: ['dashboard', 'expenses_aircraft'],
+        queryFn: () => fetchList('/api/expenses_aircraft/'),
     })
 
-    const { data: comissions, isLoading: comissionstLoad, refetch: refetchComm } = useQuery<expenses[]>({
-        queryKey: ['comissions', safraStartDate, safraEndDate],
-        queryFn: async () => {
-            const response = await axios.get(`/api/comissions/`);
-            return response.data.filter((item) => {
-                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate && item.aircraft_id === Number(idAviao)
-            }) as []
-        },
-        initialData: [],
+    const { data: allComissions = [] } = useQuery<expenses[]>({
+        queryKey: ['dashboard', 'comissions'],
+        queryFn: () => fetchList('/api/comissions/'),
     })
 
-    const { data: expenses_vehicles, isLoading: expenses_vehiclesLoad, refetch: refetchVeh } = useQuery<expenses[]>({
-        queryKey: ['expenses_vehicles', safraStartDate, safraEndDate],
-        queryFn: async () => {
-            const response = await axios.get(`/api/expenses_vehicles/`);
-            return response.data.filter((item) => {
-                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate && item.aircraft_id === Number(idAviao)
-            }) as []
-        },
-        initialData: [],
+    const { data: allVehicleExpenses = [] } = useQuery<expenses[]>({
+        queryKey: ['dashboard', 'expenses_vehicles'],
+        queryFn: () => fetchList('/api/expenses_vehicles/'),
     })
 
-    const { data: expenses_specific, isLoading: expenses_specificLoad, refetch: refetchSpe } = useQuery<expenses[]>({
-        queryKey: ['expenses_specific', safraStartDate, safraEndDate],
-        queryFn: async () => {
-            const response = await axios.get(`/api/expenses_specific/`);
-            return response.data.filter((item: expenses) => {
-                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate && item.aircraft_id === Number(idAviao)
-            }) as []
-        },
-        initialData: [],
+    const { data: allSpecificExpenses = [] } = useQuery<expenses[]>({
+        queryKey: ['dashboard', 'expenses_specific'],
+        queryFn: () => fetchList('/api/expenses_specific/'),
     })
+
+    const belongsToAircraft = (item: expenses) =>
+        isWithinRange(item.data, startDate, endDate) && Number(item.aircraft_id) === aircraftId
+
+    const expenses_aircraft = useMemo(
+        () => allAircraftExpenses.filter(belongsToAircraft),
+        [allAircraftExpenses, startDate, endDate, aircraftId]
+    )
+    const comissions = useMemo(
+        () => allComissions.filter(belongsToAircraft),
+        [allComissions, startDate, endDate, aircraftId]
+    )
+    const expenses_vehicles = useMemo(
+        () => allVehicleExpenses.filter(belongsToAircraft),
+        [allVehicleExpenses, startDate, endDate, aircraftId]
+    )
+    const expenses_specific = useMemo(
+        () => allSpecificExpenses.filter(belongsToAircraft),
+        [allSpecificExpenses, startDate, endDate, aircraftId]
+    )
 
     const filteredExpenses = useMemo(() => {
-        const aircraft = expenses_aircraft
-        const commission = comissions
-        const vehicle = expenses_vehicles
-        const specific = expenses_specific
-
         return {
-            Aeronave: aircraft,
-            Comissão: commission,
-            Veículo: vehicle,
-            Específico: specific,
-            Total: [...aircraft, ...commission, ...vehicle, ...specific]
+            Aeronave: expenses_aircraft,
+            Comissão: comissions,
+            Veículo: expenses_vehicles,
+            Específico: expenses_specific,
+            Total: [...expenses_aircraft, ...comissions, ...expenses_vehicles, ...expenses_specific]
         }
-    }, [idAviao, startDate, endDate])
+    }, [expenses_aircraft, comissions, expenses_vehicles, expenses_specific])
 
     const expensesByType = useMemo(() => {
         return Object.entries(filteredExpenses).map(([type, expenses]) => {
@@ -129,11 +122,8 @@ export default function Page() {
     }
 
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
-
-
-    const handleDateChange = () => {
-        refetch()
-    }
+    const balance = balanceData && !balanceData.error ? balanceData : null
+    const report = aircraftReport && !aircraftReport.error ? aircraftReport : null
 
     return (
         <div className="space-y-6">
@@ -154,49 +144,49 @@ export default function Page() {
 
             <Card className="bg-[#556B2F]">
                 <CardHeader>
-                    <CardTitle className='text-white'>Despesas Gerais da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
+                    <CardTitle className='text-white'>Despesas Gerais da Aeronave: {report?.nome_aeronave}</CardTitle>
                 </CardHeader>
                 <CardContent className='text-white'>
-                    {balanceData && aircraftReport && (
+                    {balance && report && (
                         <>
-                            <p>Receita Total: R$ {Number(balanceData.total_valor_area).toLocaleString()}</p>
-                            <p>Despesas Totais: R$ {Number(balanceData.total_despesas).toLocaleString()}</p>
-                            <p>Lucro Líquido: R$ {Number(balanceData.lucro_liquido).toLocaleString()}</p>
-                            <p>Total Gasto com Combustível: R$ {Number(balanceData.total_combustivel_gasto_na_area).toLocaleString()}</p>
-                            <p>Total Gasto com Óleo: R$ {Number(balanceData.total_oleo_gasto).toLocaleString()}</p>
+                            <p>Receita Total: R$ {Number(balance.total_valor_area || 0).toLocaleString()}</p>
+                            <p>Despesas Totais: R$ {Number(balance.total_despesas || 0).toLocaleString()}</p>
+                            <p>Lucro Líquido: R$ {Number(balance.lucro_liquido || 0).toLocaleString()}</p>
+                            <p>Total Gasto com Combustível: R$ {Number(balance.total_combustivel_gasto_na_area || 0).toLocaleString()}</p>
+                            <p>Total Gasto com Óleo: R$ {Number(balance.total_oleo_gasto || 0).toLocaleString()}</p>
                         </>
                     )}
                 </CardContent>
             </Card>
 
 
-            {aircraftReport.nome_aeronave && <Card className="bg-[#556B2F]">
+            {report?.nome_aeronave && <Card className="bg-[#556B2F]">
                 <CardHeader>
-                    <CardTitle className='text-white'>Relatório da Aeronave: {aircraftReport.nome_aeronave}</CardTitle>
+                    <CardTitle className='text-white'>Relatório da Aeronave: {report.nome_aeronave}</CardTitle>
                 </CardHeader>
                 <CardContent className='text-white'>
-                    <p>Área Total Aplicada (Alqueires): {aircraftReport.total_de_area_aplicada_em_alqueires}</p>
-                    <p>Área Total Aplicada (Hectares): {aircraftReport.total_de_area_aplicada_em_hectares}</p>
-                    <p>Total de Horas Voadas: {aircraftReport.total_de_horas_voadas}</p>
-                    <p>Valor médio por alqueires: {aircraftReport.valor_medio_de_alqueires_total}</p>
-                    <p>Valor médio por hectares: {aircraftReport.valor_medio_de_hectares_total}</p>
-                    <p>Valor Médio por Hora de Voo: R$ {aircraftReport.valor_medio_por_hora_de_voo_total.toLocaleString()}</p>
-                    <p>Valor Total Bruto: R$ {Number(aircraftReport.valor_total_bruto_recebido).toLocaleString()}</p>
-                    <p>Comissões de Pilotos: R$ {Number(aircraftReport.comissoes_de_pilotos).toLocaleString()}</p>
-                    <p>Comissões de Auxiliar de pista:R$ {Number(aircraftReport.comissoes_de_badeco).toLocaleString()}</p>
+                    <p>Área Total Aplicada (Alqueires): {report.total_de_area_aplicada_em_alqueires}</p>
+                    <p>Área Total Aplicada (Hectares): {report.total_de_area_aplicada_em_hectares}</p>
+                    <p>Total de Horas Voadas: {report.total_de_horas_voadas}</p>
+                    <p>Valor médio por alqueires: {report.valor_medio_de_alqueires_total}</p>
+                    <p>Valor médio por hectares: {report.valor_medio_de_hectares_total}</p>
+                    <p>Valor Médio por Hora de Voo: R$ {Number(report.valor_medio_por_hora_de_voo_total || 0).toLocaleString()}</p>
+                    <p>Valor Total Bruto: R$ {Number(report.valor_total_bruto_recebido).toLocaleString()}</p>
+                    <p>Comissões de Pilotos: R$ {Number(report.comissoes_de_pilotos).toLocaleString()}</p>
+                    <p>Comissões de Auxiliar de pista:R$ {Number(report.comissoes_de_badeco).toLocaleString()}</p>
 
                     <p>Despesa Total: R$ {
-                        (Number(aircraftReport.valor_total_bruto_recebido) -
-                            Number(aircraftReport.lucro_total)).toLocaleString()
+                        (Number(report.valor_total_bruto_recebido) -
+                            Number(report.lucro_total)).toLocaleString()
                     }</p>
-                    <p>Lucro Total: R$ {Number(aircraftReport.lucro_total).toLocaleString()}</p>
+                    <p>Lucro Total: R$ {Number(report.lucro_total).toLocaleString()}</p>
                 </CardContent>
             </Card>}
 
 
             <Card className="bg-[#556B2F]">
                 <CardHeader>
-                    <CardTitle className='text-white'>Despesas por Categoria - Avião: {aircraftReport.nome_aeronave}</CardTitle>
+                    <CardTitle className='text-white'>Despesas por Categoria - Avião: {report?.nome_aeronave}</CardTitle>
                 </CardHeader>
                 <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">

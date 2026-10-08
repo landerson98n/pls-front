@@ -5,74 +5,63 @@ import axios from 'axios'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import { SafraContext } from '../utils/context/safraContext'
+import { isWithinRange, toDateKey } from '../utils/safraDate'
 import { employees, expenses } from '@prisma/client'
-import { Button } from '@/components/ui/button'
 
+async function fetchList(url: string) {
+    const response = await axios.get(url)
+    return Array.isArray(response.data) ? response.data : []
+}
 
 export default function Dashboard() {
     const { selectedSafra } = useContext(SafraContext);
-    const [dataInicio, setStartDate] = useState<Date>()
-    const [dataFinal, setEndDate] = useState<Date>()
-
-    const safraStartDate = new Date(dataInicio)
-    const safraEndDate = new Date(dataFinal)
+    const safraInicio = toDateKey(selectedSafra?.dataInicio)
+    const safraFim = toDateKey(selectedSafra?.dataFinal)
+    const [dataInicio, setStartDate] = useState(safraInicio)
+    const [dataFinal, setEndDate] = useState(safraFim)
     const queryClient = useQueryClient()
 
     useEffect(() => {
-        setStartDate(selectedSafra.dataInicio)
-        setEndDate(selectedSafra.dataFinal)
-    }, [selectedSafra])
+        setStartDate(safraInicio)
+        setEndDate(safraFim)
+    }, [selectedSafra?.id, safraInicio, safraFim])
 
-    const { data: expenses_aircraft, isLoading: expenses_aircraftLoad, refetch: refetchAir } = useQuery<expenses[]>({
-        queryKey: ['expenses_aircraft', safraStartDate, safraEndDate],
-        queryFn: async () => {
-            const response = await axios.get(`/api/expenses_aircraft/`);
-            return response.data.filter((item) => {
-                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate
-            }) as expenses[]
-        },
-        initialData: [],
+    const { data: allAircraftExpenses = [] } = useQuery<expenses[]>({
+        queryKey: ['dashboard', 'expenses_aircraft'],
+        queryFn: () => fetchList('/api/expenses_aircraft/'),
     })
 
-    const { data: comissions, isLoading: comissionstLoad, refetch: refetchComm } = useQuery<expenses[]>({
-        queryKey: ['comissions', safraStartDate, safraEndDate],
-        queryFn: async () => {
-            const response = await axios.get(`/api/comissions/`);
-            return response.data.filter((item) => {
-                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate
-            }) as []
-        },
-        initialData: [],
+    const { data: allComissions = [] } = useQuery<expenses[]>({
+        queryKey: ['dashboard', 'comissions'],
+        queryFn: () => fetchList('/api/comissions/'),
     })
 
-    const { data: expenses_vehicles, isLoading: expenses_vehiclesLoad, refetch: refetchVeh } = useQuery<expenses[]>({
-        queryKey: ['expenses_vehicles', safraStartDate, safraEndDate],
-        queryFn: async () => {
-            const response = await axios.get(`/api/expenses_vehicles/`);
-            return response.data.filter((item) => {
-                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate
-            }) as []
-        },
-        initialData: [],
+    const { data: allVehicleExpenses = [] } = useQuery<expenses[]>({
+        queryKey: ['dashboard', 'expenses_vehicles'],
+        queryFn: () => fetchList('/api/expenses_vehicles/'),
     })
 
-    const { data: expenses_specific, isLoading: expenses_specificLoad, refetch: refetchSpe } = useQuery<expenses[]>({
-        queryKey: ['expenses_specific', safraStartDate, safraEndDate],
-        queryFn: async () => {
-            const response = await axios.get(`/api/expenses_specific/`);
-            return response.data.filter((item) => {
-                return new Date(item.data) >= safraStartDate && new Date(item.data) <= safraEndDate
-            }) as []
-        },
-        initialData: [],
+    const { data: allSpecificExpenses = [] } = useQuery<expenses[]>({
+        queryKey: ['dashboard', 'expenses_specific'],
+        queryFn: () => fetchList('/api/expenses_specific/'),
     })
 
-    useEffect(() => {
-        refetchAir();
-        refetchSpe();
-        refetchComm();
-        refetchVeh();
-    }, [selectedSafra, dataInicio, dataFinal]);
+    const expenses_aircraft = useMemo(
+        () => allAircraftExpenses.filter((item) => isWithinRange(item.data, dataInicio, dataFinal)),
+        [allAircraftExpenses, dataInicio, dataFinal]
+    )
+    const comissions = useMemo(
+        () => allComissions.filter((item) => isWithinRange(item.data, dataInicio, dataFinal)),
+        [allComissions, dataInicio, dataFinal]
+    )
+    const expenses_vehicles = useMemo(
+        () => allVehicleExpenses.filter((item) => isWithinRange(item.data, dataInicio, dataFinal)),
+        [allVehicleExpenses, dataInicio, dataFinal]
+    )
+    const expenses_specific = useMemo(
+        () => allSpecificExpenses.filter((item) => isWithinRange(item.data, dataInicio, dataFinal)),
+        [allSpecificExpenses, dataInicio, dataFinal]
+    )
     const employees = () => {
         return queryClient.getQueryData<employees[]>(['employees']) || []
     }
