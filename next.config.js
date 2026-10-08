@@ -11,5 +11,10 @@ module.exports = {
         // !! WARN !!
         ignoreBuildErrors: true,
     },
-    
+    webpack: (config, { isServer }) => {
+        if (isServer) {
+            config.optimization.splitChunks = false
+        }
+        return config
+    },
 }
